@@ -844,6 +844,8 @@ async def inline_query_handler(client: Client, inline_query):
     ])
     markup = InlineKeyboardMarkup(btn_rows)
 
+    # High-quality 3D thumbnail icons for each file type in Telegram inline results.
+    # Sourced from Microsoft's Fluent Emoji 3D set — 512px renders for crisp display.
     THUMBS = {
         "video":    "https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Clapper%20board/3D/clapper_board_3d.png",
         "audio":    "https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Headphone/3D/headphone_3d.png",
@@ -854,10 +856,10 @@ async def inline_query_handler(client: Client, inline_query):
     thumb_url = THUMBS.get(file_type, DEFAULT_THUMB)
 
     display_name = file_data["file_name"]
-    if len(display_name) > 50:
-        display_name = display_name[:47] + "…"
+    if len(display_name) > 48:
+        display_name = display_name[:45] + "…"
     result_title = f"{type_icon}  {display_name}"
-    result_desc  = f"💾 {fmt_size}   ·   {type_label.upper()}   ·   {small_caps('tap to share')}"
+    result_desc  = f"💾 {fmt_size}   ·   {type_label.upper()}   ·   ᴛᴀᴘ ᴛᴏ ꜱʜᴀʀᴇ ɪɴꜱᴛᴀɴᴛʟʏ"
 
     result_item = None
 
@@ -885,8 +887,8 @@ async def inline_query_handler(client: Client, inline_query):
             ),
             reply_markup=markup,
             thumb_url=thumb_url,
-            thumb_width=64,
-            thumb_height=64,
+            thumb_width=320,
+            thumb_height=320,
         )
 
     await inline_query.answer(results=[result_item], cache_time=30)

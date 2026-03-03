@@ -4,7 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{{ file_name }} | Video Player</title>
-<link rel="icon" href="https://i.ibb.co/8Dy0FJF5/IMG-3062.jpg">
+<link rel="icon" type="image/jpeg" href="https://i.ibb.co/2YsHg8tf/IMG-3062.jpg">
+<link rel="shortcut icon" type="image/jpeg" href="https://i.ibb.co/2YsHg8tf/IMG-3062.jpg">
+<link rel="apple-touch-icon" href="https://i.ibb.co/2YsHg8tf/IMG-3062.jpg">
 <meta property="og:title" content="{{ file_name }}">
 <meta property="og:image" content="https://i.ibb.co/KzqHfL05/photo-2026-02-07-13-38-13.jpg">
 <meta property="og:description" content="Watch {{ file_name }} — stream or download instantly.">
@@ -16,7 +18,8 @@
 <style>
 :root{--bg:#080b10;--card:#131922;--border:rgba(255,255,255,.07);--gold:#f0b429;--gold2:#ffd166;--text:#e8edf5;--muted:#6b7a99;--r:14px}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:'Sora',sans-serif;min-height:100vh;overflow-x:hidden}
+html{overscroll-behavior:none;background:var(--bg)}
+body{background:var(--bg);color:var(--text);font-family:'Sora',sans-serif;min-height:100vh;overflow-x:hidden;overscroll-behavior:none}
 .orb{position:fixed;border-radius:50%;filter:blur(90px);opacity:.18;pointer-events:none;z-index:0;animation:drift 14s ease-in-out infinite alternate}
 .orb1{width:500px;height:500px;background:#f0b429;top:-150px;left:-150px;animation-duration:16s}
 .orb2{width:400px;height:400px;background:#3b82f6;bottom:-100px;right:-100px;animation-duration:20s;animation-delay:-6s}

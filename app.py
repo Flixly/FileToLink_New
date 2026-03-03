@@ -18,6 +18,9 @@ logger = logging.getLogger(__name__)
 
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 
+# Tracks live streaming / download sessions in real-time.
+# Incremented when a stream or download begins sending bytes;
+# decremented the moment the response is fully written (or errors).
 _active_connections = 0
 
 
@@ -87,15 +90,22 @@ def build_app(bot: Bot, database) -> web.Application:
             "owner_username": "FLiX_LY",
         }
 
+    async def _tracked_stream(request: web.Request, file_hash: str, is_download: bool):
+        """Wrap stream_file so _active_connections accurately counts live sessions."""
+        global _active_connections
+        _active_connections += 1
+        try:
+            return await streaming_service.stream_file(request, file_hash, is_download=is_download)
+        finally:
+            _active_connections = max(0, _active_connections - 1)
+
     async def stream_page(request: web.Request):
         file_hash = request.match_info["file_hash"]
         accept    = request.headers.get("Accept", "")
         range_h   = request.headers.get("Range", "")
 
         if range_h or "text/html" not in accept:
-            return await streaming_service.stream_file(
-                request, file_hash, is_download=False
-            )
+            return await _tracked_stream(request, file_hash, is_download=False)
 
         file_data = await database.get_file_by_hash(file_hash)
         if not file_data:
@@ -127,7 +137,7 @@ def build_app(bot: Bot, database) -> web.Application:
 
     async def download_file(request: web.Request):
         file_hash = request.match_info["file_hash"]
-        return await streaming_service.stream_file(request, file_hash, is_download=True)
+        return await _tracked_stream(request, file_hash, is_download=True)
 
     async def _collect_panel_data():
         try:
@@ -265,13 +275,14 @@ def build_app(bot: Bot, database) -> web.Application:
         try:
             info = _bot_info(bot)
             payload = {
-                "status":       "ok",
-                "bot_status":   "running" if getattr(bot, "me", None) else "initializing",
-                "bot_name":     info["bot_name"],
-                "bot_username": info["bot_username"],
-                "bot_id":       info["bot_id"],
-                "bot_dc":       info["bot_dc"],
-                "active_conns": _active_connections,
+                "status":                  "ok",
+                "bot_status":              "running" if getattr(bot, "me", None) else "initializing",
+                "bot_name":                info["bot_name"],
+                "bot_username":            info["bot_username"],
+                "bot_id":                  info["bot_id"],
+                "bot_dc":                  info["bot_dc"],
+                "active_conns":            _active_connections,
+                "active_conns_description": "Live streaming/download sessions currently transferring bytes",
             }
             return web.Response(text=json.dumps(payload), content_type="application/json")
         except Exception as exc:
