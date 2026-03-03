@@ -33,7 +33,6 @@ def small_caps(text: str) -> str:
 
 
 def format_uptime(seconds: float) -> str:
-    """Convert seconds into a human-readable uptime string."""
     seconds = int(seconds)
     days,    seconds = divmod(seconds, 86400)
     hours,   seconds = divmod(seconds, 3600)
@@ -50,7 +49,6 @@ def format_uptime(seconds: float) -> str:
 
 
 def human_size(n: int) -> str:
-    """Return a short human-readable file size (used for log display)."""
     for unit in ("B", "KB", "MB", "GB"):
         if n < 1024:
             return f"{n:.1f} {unit}"
@@ -59,7 +57,6 @@ def human_size(n: int) -> str:
 
 
 async def check_owner(client, event) -> bool:
-    """Return True if the event sender is a bot owner; send denial otherwise."""
     from pyrogram.types import Message, CallbackQuery
 
     user_id = event.from_user.id

@@ -1,94 +1,161 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ʙᴀɴᴅᴡɪᴅᴛʜ ʟɪᴍɪᴛ ᴇxᴄᴇᴇᴅᴇᴅ | {{ bot_name }}</title>
-    <link rel="icon" type="image/png" href="https://i.ibb.co/pQ0tSCj/1232b12e0a0c.png">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html {
-            min-height: 100%;
-            background-color: #991b1b;
-        }
-        body { 
-            font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%) fixed;
-            background-attachment: fixed;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        .container {
-            max-width: 600px;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 30px;
-            padding: 60px 40px;
-            text-align: center;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-        }
-        .icon {
-            font-size: 5em;
-            color: #dc2626;
-            margin-bottom: 30px;
-            animation: pulse 2s infinite;
-        }
-        h1 {
-            font-size: 2.5em;
-            color: #333;
-            margin-bottom: 20px;
-            font-weight: 800;
-        }
-        p {
-            font-size: 1.2em;
-            color: #666;
-            line-height: 1.6;
-            margin-bottom: 30px;
-        }
-        .btn {
-            display: inline-block;
-            padding: 15px 40px;
-            background: linear-gradient(135deg, #dc2626, #991b1b);
-            color: white;
-            text-decoration: none;
-            border-radius: 50px;
-            font-weight: 600;
-            font-size: 1.1em;
-            transition: all 0.3s ease;
-            box-shadow: 0 10px 30px rgba(220, 38, 38, 0.3);
-        }
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 40px rgba(220, 38, 38, 0.4);
-        }
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-        @media (max-width: 768px) {
-            .container { padding: 40px 20px; }
-            h1 { font-size: 2em; }
-            p { font-size: 1em; }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ʙᴀɴᴅᴡɪᴅᴛʜ ʟɪᴍɪᴛ ᴇxᴄᴇᴇᴅᴇᴅ | {{ bot_name }}</title>
+  <link rel="icon" href="https://i.ibb.co/KzqHfL05/photo-2026-02-07-13-38-13.jpg">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { min-height: 100%; background-color: #0f0c29; }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%) fixed;
+      min-height: 100vh;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    .bg-animation {
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0; overflow: hidden; pointer-events: none;
+    }
+    .bg-animation span {
+      position: absolute; display: block;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+      animation: floatUp 25s linear infinite;
+      bottom: -200px;
+    }
+    .bg-animation span:nth-child(1)  { left:10%; width:40px;  height:40px;  animation-delay:0s;   animation-duration:20s; }
+    .bg-animation span:nth-child(2)  { left:25%; width:15px;  height:15px;  animation-delay:2s;   animation-duration:14s; }
+    .bg-animation span:nth-child(3)  { left:50%; width:60px;  height:60px;  animation-delay:4s;   animation-duration:22s; }
+    .bg-animation span:nth-child(4)  { left:70%; width:20px;  height:20px;  animation-delay:1s;   animation-duration:18s; }
+    .bg-animation span:nth-child(5)  { left:85%; width:80px;  height:80px;  animation-delay:6s;   animation-duration:30s; }
+    .bg-animation span:nth-child(6)  { left:35%; width:25px;  height:25px;  animation-delay:8s;   animation-duration:16s; }
+    .bg-animation span:nth-child(7)  { left:60%; width:12px;  height:12px;  animation-delay:3s;   animation-duration:12s; }
+    .bg-animation span:nth-child(8)  { left:15%; width:90px;  height:90px;  animation-delay:10s;  animation-duration:35s; }
+    .bg-animation span:nth-child(9)  { left:90%; width:30px;  height:30px;  animation-delay:5s;   animation-duration:24s; }
+    .bg-animation span:nth-child(10) { left:45%; width:18px;  height:18px;  animation-delay:12s;  animation-duration:28s; }
+    @keyframes floatUp {
+      0%   { transform: translateY(0) rotate(0deg);      opacity: 0.7; }
+      100% { transform: translateY(-110vh) rotate(720deg); opacity: 0; }
+    }
+
+    .container {
+      position: relative; z-index: 1;
+      width: 100%; max-width: 560px;
+      text-align: center;
+      animation: fadeInDown .7s ease both;
+    }
+    @keyframes fadeInDown {
+      from { opacity:0; transform:translateY(-30px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+
+    .card {
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,107,107,.2);
+      border-radius: 28px;
+      padding: 52px 44px;
+      box-shadow: 0 24px 64px rgba(0,0,0,.35);
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 4px;
+      background: linear-gradient(90deg, #ff6b6b, #ee0979, #ff6b6b);
+    }
+
+    .warning-icon {
+      width: 80px; height: 80px;
+      border-radius: 24px;
+      background: rgba(255,107,107,.12);
+      border: 1px solid rgba(255,107,107,.25);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 2.2rem; color: #ff6b6b;
+      margin-bottom: 24px;
+      animation: pulse-warn 2s ease-in-out infinite;
+    }
+    @keyframes pulse-warn {
+      0%,100% { box-shadow: 0 0 0 0 rgba(255,107,107,.3); }
+      50%      { box-shadow: 0 0 0 12px rgba(255,107,107,0); }
+    }
+
+    h1 {
+      font-size: clamp(1.4rem, 4vw, 1.9rem);
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 16px;
+    }
+    p.sub {
+      color: rgba(255,255,255,.5);
+      font-size: 1rem;
+      line-height: 1.7;
+      margin-bottom: 36px;
+    }
+    p.sub strong { color: #ff6b6b; }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 14px 34px; border-radius: 50px;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 700; font-size: .9rem;
+      text-decoration: none; border: none; cursor: pointer;
+      transition: all .3s ease;
+      background: linear-gradient(135deg, #ff6b6b, #ee0979);
+      color: #fff;
+      box-shadow: 0 8px 28px rgba(238,9,121,.35);
+    }
+    .btn:hover { transform: translateY(-3px); box-shadow: 0 12px 36px rgba(238,9,121,.5); }
+
+    .footer-note {
+      margin-top: 26px;
+      color: rgba(255,255,255,.35);
+      font-size: .82rem;
+    }
+    .footer-note a { color: rgba(255,215,0,.75); text-decoration: none; font-weight: 700; }
+    .footer-note a:hover { color: #ffd700; }
+
+    @media (max-width: 600px) {
+      .card { padding: 36px 20px; }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="icon">
-            <i class="fas fa-exclamation-triangle"></i>
-        </div>
-        <h1>ʙᴀɴᴅᴡɪᴅᴛʜ ʟɪᴍɪᴛ ᴇxᴄᴇᴇᴅᴇᴅ</h1>
-        <p>
-            ᴛʜᴇ ʙᴏᴛ ʜᴀs ʀᴇᴀᴄʜᴇᴅ ɪᴛs ʙᴀɴᴅᴡɪᴅᴛʜ ʟɪᴍɪᴛ ғᴏʀ ᴛʜɪs ᴘᴇʀɪᴏᴅ.<br>
-            ᴘʟᴇᴀsᴇ ᴄᴏɴᴛᴀᴄᴛ ᴛʜᴇ ᴀᴅᴍɪɴɪsᴛʀᴀᴛᴏʀ ᴏʀ ᴛʀʏ ᴀɢᴀɪɴ ʟᴀᴛᴇʀ.
-        </p>
-        <a href="https://t.me/{{ owner_username }}" target="_blank" class="btn">
-            <i class="fas fa-user"></i> ᴄᴏɴᴛᴀᴄᴛ ᴏᴡɴᴇʀ
-        </a>
+  <div class="bg-animation">
+    <span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span><span></span>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <div class="warning-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+      <h1>ʙᴀɴᴅᴡɪᴅᴛʜ ʟɪᴍɪᴛ ᴇxᴄᴇᴇᴅᴇᴅ</h1>
+      <p class="sub">
+        ᴛʜᴇ ʙᴏᴛ ʜᴀꜱ ʀᴇᴀᴄʜᴇᴅ ɪᴛꜱ <strong>ʙᴀɴᴅᴡɪᴅᴛʜ ʟɪᴍɪᴛ</strong> ꜰᴏʀ ᴛʜɪꜱ ᴘᴇʀɪᴏᴅ.<br>
+        ᴘʟᴇᴀꜱᴇ ᴄᴏɴᴛᴀᴄᴛ ᴛʜᴇ ᴀᴅᴍɪɴɪꜱᴛʀᴀᴛᴏʀ ᴏʀ ᴛʀʏ ᴀɢᴀɪɴ ʟᴀᴛᴇʀ.
+      </p>
+      <a href="https://t.me/{{ owner_username }}" target="_blank" class="btn">
+        <i class="fa-solid fa-user"></i> ᴄᴏɴᴛᴀᴄᴛ ᴏᴡɴᴇʀ
+      </a>
     </div>
+
+    <div class="footer-note">
+      ᴘᴏᴡᴇʀᴇᴅ ʙʏ <a href="https://t.me/{{ bot_username }}">{{ bot_name }}</a> &nbsp;·&nbsp;
+      ᴄʀᴇᴀᴛᴇᴅ ᴡɪᴛʜ ❤️ ʙʏ <a href="https://t.me/FLiX_LY" target="_blank">@FLiX_LY</a>
+    </div>
+  </div>
 </body>
 </html>

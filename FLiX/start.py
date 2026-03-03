@@ -15,7 +15,7 @@ from helper import small_caps, format_size, escape_markdown, check_fsub
 logger = logging.getLogger(__name__)
 
 
-def show_nav(page: str, user=None) -> tuple[str, InlineKeyboardMarkup]:
+def show_nav(page: str, user=None, bot_username: str = "") -> tuple[str, InlineKeyboardMarkup]:
 
     mention = getattr(user, "mention", "user") if user else "user"
 
@@ -54,7 +54,7 @@ def show_nav(page: str, user=None) -> tuple[str, InlineKeyboardMarkup]:
     elif page == "about":
         text = (
             "ℹ️ **ᴀʙᴏᴜᴛ ꜰɪʟᴇꜱᴛʀᴇᴀᴍ ʙᴏᴛ**\n\n"
-            f"🤖 **ʙᴏᴛ:** @{Config.BOT_USERNAME}\n\n"
+            f"🤖 **ʙᴏᴛ:** @{bot_username}\n\n"
             "💻 **ᴅᴇᴠᴇʟᴏᴘᴇʀ:** @FLiX_LY\n"
             "⚡ **ᴠᴇʀꜱɪᴏɴ:** 2.1"
         )
@@ -74,6 +74,7 @@ def show_nav(page: str, user=None) -> tuple[str, InlineKeyboardMarkup]:
 async def start_command(client: Client, message: Message):
     user    = message.from_user
     user_id = user.id
+    _me     = await client.get_me()
 
     is_new = await db.register_user_on_start({
         "user_id":    str(user_id),
@@ -169,7 +170,7 @@ async def start_command(client: Client, message: Message):
             )
         return
 
-    text, buttons = show_nav("start", message.from_user)
+    text, buttons = show_nav("start", message.from_user, bot_username=_me.username or "")
 
     if Config.Start_IMG:
         try:
@@ -207,7 +208,8 @@ async def help_command(client: Client, message: Message):
 
 @Client.on_message(filters.command("about") & filters.private, group=1)
 async def about_command(client: Client, message: Message):
-    text, buttons = show_nav("about", message.from_user)
+    _me = await client.get_me()
+    text, buttons = show_nav("about", message.from_user, bot_username=_me.username or "")
     await client.send_message(
         chat_id=message.chat.id,
         text=text,
@@ -219,7 +221,8 @@ async def about_command(client: Client, message: Message):
 
 @Client.on_callback_query(filters.regex(r"^(start|help|about)$"), group=1)
 async def cb_info(client: Client, callback: CallbackQuery):
-    text, markup = show_nav(callback.data, callback.from_user)
+    _me = await client.get_me()
+    text, markup = show_nav(callback.data, callback.from_user, bot_username=_me.username or "")
     msg = callback.message
 
     try:

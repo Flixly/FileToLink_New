@@ -508,7 +508,7 @@ async def cb_owner_file_detail(client: Client, callback: CallbackQuery):
     base_url      = Config.URL or f"http://localhost:{Config.PORT}"
     stream_link   = f"{base_url}/stream/{file_hash}"
     download_link = f"{base_url}/dl/{file_hash}"
-    telegram_link = f"https://t.me/{Config.BOT_USERNAME}?start=file_{file_hash}"
+    telegram_link = f"https://t.me/{(await client.get_me()).username}?start=file_{file_hash}"
 
     safe_name      = escape_markdown(file_data["file_name"])
     formatted_size = format_size(file_data["file_size"])
@@ -794,14 +794,14 @@ async def inline_query_handler(client: Client, inline_query):
     file_hash     = file_data["file_id"]
     stream_link   = f"{base_url}/stream/{file_hash}"
     download_link = f"{base_url}/dl/{file_hash}"
-    telegram_link = f"https://t.me/{Config.BOT_USERNAME}?start=file_{file_hash}"
+    bot_username  = (await client.get_me()).username
+    telegram_link = f"https://t.me/{bot_username}?start=file_{file_hash}"
     file_type     = file_data.get("file_type", "document")
     is_streamable = file_type in STREAMABLE_TYPES
     safe_name     = escape_markdown(file_data["file_name"])
     fmt_size      = format_size(file_data["file_size"])
     tg_file_id    = file_data.get("telegram_file_id", "")
 
-    # ── Type-specific icons & labels ──────────────────────────
     TYPE_META = {
         "video":    {"icon": "🎬", "label": "ᴠɪᴅᴇᴏ",    "action": "ꜱᴛʀᴇᴀᴍ / ᴅᴏᴡɴʟᴏᴀᴅ"},
         "audio":    {"icon": "🎵", "label": "ᴀᴜᴅɪᴏ",    "action": "ꜱᴛʀᴇᴀᴍ / ᴅᴏᴡɴʟᴏᴀᴅ"},
@@ -812,8 +812,6 @@ async def inline_query_handler(client: Client, inline_query):
     type_icon  = meta["icon"]
     type_label = meta["label"]
 
-    # ── Message content ───────────────────────────────────────
-    # Clean, well-structured share message
     divider = "─" * 20
     text = (
         f"{type_icon} **{safe_name}**\n"
@@ -829,9 +827,8 @@ async def inline_query_handler(client: Client, inline_query):
         text += (
             f"\n⬇️ **{small_caps('download')}**\n`{download_link}`"
         )
-    text += f"\n\n🤖 _ᴠɪᴀ @{Config.BOT_USERNAME}_"
+    text += f"\n\n🤖 _ᴠɪᴀ @{bot_username}_"
 
-    # ── Inline keyboard ───────────────────────────────────────
     btn_rows = []
     if is_streamable:
         btn_rows.append([
@@ -847,7 +844,6 @@ async def inline_query_handler(client: Client, inline_query):
     ])
     markup = InlineKeyboardMarkup(btn_rows)
 
-    # ── Thumbnail URLs (high-quality 3D Fluent icons) ─────────
     THUMBS = {
         "video":    "https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Clapper%20board/3D/clapper_board_3d.png",
         "audio":    "https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Headphone/3D/headphone_3d.png",
@@ -857,8 +853,6 @@ async def inline_query_handler(client: Client, inline_query):
     DEFAULT_THUMB = "https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Open%20file%20folder/3D/open_file_folder_3d.png"
     thumb_url = THUMBS.get(file_type, DEFAULT_THUMB)
 
-    # ── Build result item ─────────────────────────────────────
-    # Result title: icon + filename  (truncated if too long)
     display_name = file_data["file_name"]
     if len(display_name) > 50:
         display_name = display_name[:47] + "…"

@@ -8,76 +8,88 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html {
-      min-height: 100%;
-      background-color: #764ba2;
-    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { min-height: 100%; background-color: #0f0c29; }
+
     body {
       font-family: 'Poppins', sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%) fixed;
-      background-attachment: fixed;
+      background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%) fixed;
       min-height: 100vh;
       overflow-x: hidden;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      padding: 24px 16px;
     }
 
-    /* ── Floating particle background ── */
     .bg-animation {
       position: fixed; top: 0; left: 0;
       width: 100%; height: 100%;
-      z-index: 0; overflow: hidden;
+      z-index: 0; overflow: hidden; pointer-events: none;
     }
     .bg-animation span {
       position: absolute; display: block;
-      background: rgba(255,255,255,0.1);
-      animation: animate 25s linear infinite;
-      bottom: -150px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+      animation: floatUp 25s linear infinite;
+      bottom: -200px;
     }
-    .bg-animation span:nth-child(1)  { left:25%; width:80px;  height:80px;  animation-delay:0s; }
-    .bg-animation span:nth-child(2)  { left:10%; width:20px;  height:20px;  animation-delay:2s;  animation-duration:12s; }
-    .bg-animation span:nth-child(3)  { left:70%; width:20px;  height:20px;  animation-delay:4s; }
-    .bg-animation span:nth-child(4)  { left:40%; width:60px;  height:60px;  animation-delay:0s;  animation-duration:18s; }
-    .bg-animation span:nth-child(5)  { left:65%; width:20px;  height:20px;  animation-delay:0s; }
-    .bg-animation span:nth-child(6)  { left:75%; width:110px; height:110px; animation-delay:3s; }
-    .bg-animation span:nth-child(7)  { left:35%; width:150px; height:150px; animation-delay:7s; }
-    .bg-animation span:nth-child(8)  { left:50%; width:25px;  height:25px;  animation-delay:15s; animation-duration:45s; }
-    .bg-animation span:nth-child(9)  { left:20%; width:15px;  height:15px;  animation-delay:2s;  animation-duration:35s; }
-    .bg-animation span:nth-child(10) { left:85%; width:150px; height:150px; animation-delay:0s;  animation-duration:11s; }
-    @keyframes animate {
-      0%   { transform: translateY(0) rotate(0deg);    opacity:1; border-radius:0;   }
-      100% { transform: translateY(-1000px) rotate(720deg); opacity:0; border-radius:50%; }
+    .bg-animation span:nth-child(1)  { left:10%; width:40px;  height:40px;  animation-delay:0s;   animation-duration:20s; }
+    .bg-animation span:nth-child(2)  { left:25%; width:15px;  height:15px;  animation-delay:2s;   animation-duration:14s; }
+    .bg-animation span:nth-child(3)  { left:50%; width:60px;  height:60px;  animation-delay:4s;   animation-duration:22s; }
+    .bg-animation span:nth-child(4)  { left:70%; width:20px;  height:20px;  animation-delay:1s;   animation-duration:18s; }
+    .bg-animation span:nth-child(5)  { left:85%; width:80px;  height:80px;  animation-delay:6s;   animation-duration:30s; }
+    .bg-animation span:nth-child(6)  { left:35%; width:25px;  height:25px;  animation-delay:8s;   animation-duration:16s; }
+    .bg-animation span:nth-child(7)  { left:60%; width:12px;  height:12px;  animation-delay:3s;   animation-duration:12s; }
+    .bg-animation span:nth-child(8)  { left:15%; width:90px;  height:90px;  animation-delay:10s;  animation-duration:35s; }
+    .bg-animation span:nth-child(9)  { left:90%; width:30px;  height:30px;  animation-delay:5s;   animation-duration:24s; }
+    .bg-animation span:nth-child(10) { left:45%; width:18px;  height:18px;  animation-delay:12s;  animation-duration:28s; }
+    @keyframes floatUp {
+      0%   { transform: translateY(0) rotate(0deg);      opacity: 0.7; }
+      100% { transform: translateY(-110vh) rotate(720deg); opacity: 0; }
     }
 
-    /* ── Card ── */
     .container {
       position: relative; z-index: 1;
-      max-width: 700px; width: 90%;
+      width: 100%; max-width: 620px;
       text-align: center;
-      padding: 20px;
-      animation: fadeInDown 0.8s ease;
+      animation: fadeInDown .7s ease both;
     }
+    @keyframes fadeInDown {
+      from { opacity:0; transform:translateY(-30px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+
     .card {
-      background: rgba(255,255,255,0.97);
-      border-radius: 30px;
-      padding: 60px 50px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 28px;
+      padding: 52px 44px;
+      box-shadow: 0 24px 64px rgba(0,0,0,.35);
       position: relative;
       overflow: hidden;
     }
     .card::before {
       content: '';
       position: absolute; top: 0; left: 0;
-      width: 100%; height: 6px;
+      width: 100%; height: 4px;
       background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
     }
 
-    /* ── 404 big number ── */
+    .ghost-wrap {
+      font-size: 4.5rem;
+      margin-bottom: 16px;
+      animation: float 3s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-14px); }
+    }
+
     .error-code {
-      font-size: clamp(5rem, 15vw, 8rem);
+      font-size: clamp(4.5rem, 14vw, 7rem);
       font-weight: 900;
       line-height: 1;
       background: linear-gradient(135deg, #667eea, #764ba2);
@@ -87,35 +99,23 @@
       animation: pulse 3s ease-in-out infinite;
     }
     @keyframes pulse {
-      0%,100% { opacity: 1; }
-      50%      { opacity: .85; }
-    }
-
-    /* ── Ghost icon ── */
-    .ghost-wrap {
-      font-size: 5rem;
-      margin-bottom: 20px;
-      animation: float 3s ease-in-out infinite;
-    }
-    @keyframes float {
-      0%,100% { transform: translateY(0); }
-      50%      { transform: translateY(-15px); }
+      0%,100% { opacity:1; }
+      50%      { opacity:.8; }
     }
 
     h1 {
-      font-size: clamp(1.4rem, 4vw, 2rem);
+      font-size: clamp(1.3rem, 4vw, 1.8rem);
       font-weight: 800;
-      color: #333;
-      margin-bottom: 14px;
+      color: #fff;
+      margin-bottom: 12px;
     }
     p.sub {
-      color: #777;
-      font-size: 1.05rem;
+      color: rgba(255,255,255,.5);
+      font-size: 1rem;
       line-height: 1.7;
-      margin-bottom: 36px;
+      margin-bottom: 32px;
     }
 
-    /* ── Possible reasons chips ── */
     .reasons {
       display: flex;
       flex-wrap: wrap;
@@ -124,86 +124,58 @@
       margin-bottom: 36px;
     }
     .reason-chip {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      background: rgba(102,126,234,0.08);
-      border: 1px solid rgba(102,126,234,0.2);
+      display: flex; align-items: center; gap: 7px;
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.12);
       border-radius: 999px;
       padding: 6px 16px;
-      font-size: .82rem;
-      color: #555;
+      font-size: .8rem;
+      color: rgba(255,255,255,.6);
       font-weight: 500;
     }
     .reason-chip i { color: #764ba2; }
 
-    /* ── Buttons ── */
     .btn-row {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 14px;
+      display: flex; flex-wrap: wrap;
+      justify-content: center; gap: 12px;
     }
     .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 9px;
-      padding: 14px 32px;
-      border-radius: 50px;
-      font-weight: 700;
-      font-size: .95rem;
-      text-decoration: none;
-      transition: all 0.3s ease;
-      cursor: pointer;
-      border: none;
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 26px; border-radius: 50px;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 700; font-size: .88rem;
+      text-decoration: none; border: none; cursor: pointer;
+      transition: all .3s ease;
     }
     .btn-primary {
       background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
-      box-shadow: 0 8px 24px rgba(102,126,234,0.4);
+      color: #fff;
+      box-shadow: 0 8px 24px rgba(102,126,234,.4);
     }
-    .btn-primary:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 12px 32px rgba(102,126,234,0.5);
-    }
-    .btn-outline {
-      background: transparent;
-      color: #667eea;
-      border: 2px solid #667eea;
-    }
-    .btn-outline:hover {
-      background: rgba(102,126,234,0.08);
-      transform: translateY(-3px);
-    }
+    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(102,126,234,.55); }
     .btn-tg {
       background: linear-gradient(135deg, #26a4da, #1e89b8);
-      color: white;
-      box-shadow: 0 8px 24px rgba(38,164,218,0.35);
+      color: #fff;
+      box-shadow: 0 8px 24px rgba(38,164,218,.35);
     }
-    .btn-tg:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 12px 32px rgba(38,164,218,0.45);
+    .btn-tg:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(38,164,218,.45); }
+    .btn-outline {
+      background: rgba(255,255,255,.08);
+      color: rgba(255,255,255,.75);
+      border: 1px solid rgba(255,255,255,.18);
     }
+    .btn-outline:hover { background: rgba(255,255,255,.14); color: #fff; }
 
-    /* ── Footer ── */
     .footer-note {
-      margin-top: 28px;
-      color: rgba(255,255,255,0.85);
-      font-size: .9rem;
+      margin-top: 26px;
+      color: rgba(255,255,255,.35);
+      font-size: .82rem;
     }
-    .footer-note a {
-      color: #ffd700;
-      text-decoration: none;
-      font-weight: 700;
-    }
-    .footer-note a:hover { color: #ffed4e; }
+    .footer-note a { color: rgba(255,215,0,.75); text-decoration: none; font-weight: 700; }
+    .footer-note a:hover { color: #ffd700; }
 
-    @keyframes fadeInDown {
-      from { opacity:0; transform:translateY(-40px); }
-      to   { opacity:1; transform:translateY(0); }
-    }
     @media (max-width: 600px) {
-      .card { padding: 40px 24px; }
+      .card { padding: 36px 20px; }
       .btn-row { flex-direction: column; align-items: center; }
       .btn { width: 100%; justify-content: center; }
     }
@@ -219,33 +191,33 @@
     <div class="card">
       <div class="ghost-wrap">👻</div>
       <div class="error-code">404</div>
-      <h1>File Not Found</h1>
+      <h1>ꜰɪʟᴇ ɴᴏᴛ ꜰᴏᴜɴᴅ</h1>
       <p class="sub">
-        Oops! The file you're looking for has vanished into the void.<br>
-        It may have been deleted, revoked, or the link is invalid.
+        ᴏᴏᴘꜱ! ᴛʜᴇ ꜰɪʟᴇ ʏᴏᴜ'ʀᴇ ʟᴏᴏᴋɪɴɢ ꜰᴏʀ ʜᴀꜱ ᴠᴀɴɪꜱʜᴇᴅ ɪɴᴛᴏ ᴛʜᴇ ᴠᴏɪᴅ.<br>
+        ɪᴛ ᴍᴀʏ ʜᴀᴠᴇ ʙᴇᴇɴ ᴅᴇʟᴇᴛᴇᴅ, ʀᴇᴠᴏᴋᴇᴅ, ᴏʀ ᴛʜᴇ ʟɪɴᴋ ɪꜱ ɪɴᴠᴀʟɪᴅ.
       </p>
 
       <div class="reasons">
-        <div class="reason-chip"><i class="fa-solid fa-trash"></i> File was deleted</div>
-        <div class="reason-chip"><i class="fa-solid fa-link-slash"></i> Link expired or invalid</div>
-        <div class="reason-chip"><i class="fa-solid fa-lock"></i> Access was revoked</div>
-        <div class="reason-chip"><i class="fa-solid fa-spell-check"></i> Typo in the URL</div>
+        <div class="reason-chip"><i class="fa-solid fa-trash"></i> ꜰɪʟᴇ ᴡᴀꜱ ᴅᴇʟᴇᴛᴇᴅ</div>
+        <div class="reason-chip"><i class="fa-solid fa-link-slash"></i> ʟɪɴᴋ ᴇxᴘɪʀᴇᴅ ᴏʀ ɪɴᴠᴀʟɪᴅ</div>
+        <div class="reason-chip"><i class="fa-solid fa-lock"></i> ᴀᴄᴄᴇꜱꜱ ᴡᴀꜱ ʀᴇᴠᴏᴋᴇᴅ</div>
+        <div class="reason-chip"><i class="fa-solid fa-spell-check"></i> ᴛʏᴘᴏ ɪɴ ᴛʜᴇ ᴜʀʟ</div>
       </div>
 
       <div class="btn-row">
-        <a href="/" class="btn btn-primary"><i class="fa-solid fa-house"></i> Go Home</a>
+        <a href="/" class="btn btn-primary"><i class="fa-solid fa-house"></i> ʜᴏᴍᴇ</a>
         <a href="https://t.me/{{ bot_username }}" target="_blank" class="btn btn-tg">
-          <i class="fa-brands fa-telegram"></i> Open Bot
+          <i class="fa-brands fa-telegram"></i> ᴏᴘᴇɴ ʙᴏᴛ
         </a>
         <button onclick="history.back()" class="btn btn-outline">
-          <i class="fa-solid fa-arrow-left"></i> Go Back
+          <i class="fa-solid fa-arrow-left"></i> ɢᴏ ʙᴀᴄᴋ
         </button>
       </div>
     </div>
 
     <div class="footer-note">
-      Powered by <a href="https://t.me/{{ bot_username }}">File2Link</a> &nbsp;·&nbsp;
-      Created with ❤️ by <a href="https://t.me/FLiX_LY" target="_blank">@FLiX_LY</a>
+      ᴘᴏᴡᴇʀᴇᴅ ʙʏ <a href="https://t.me/{{ bot_username }}">{{ bot_name }}</a> &nbsp;·&nbsp;
+      ᴄʀᴇᴀᴛᴇᴅ ᴡɪᴛʜ ❤️ ʙʏ <a href="https://t.me/FLiX_LY" target="_blank">@FLiX_LY</a>
     </div>
   </div>
 </body>

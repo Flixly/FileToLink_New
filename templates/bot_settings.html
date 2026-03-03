@@ -319,26 +319,37 @@
 
     /* ── Bot Avatar Row ─────────────────────────────────────── */
     .bot-avatar-row {
-      display: flex; align-items: center; gap: 18px;
-      padding: 20px 24px;
+      display: flex; align-items: center; gap: 16px;
+      padding: 18px 22px;
       background: rgba(255,255,255,.05);
       border-radius: 18px;
       border: 1px solid rgba(255,255,255,.08);
       margin-bottom: 24px;
+      flex-wrap: wrap;
     }
     .bot-avatar {
-      width: 58px; height: 58px;
+      width: 54px; height: 54px;
       border-radius: 50%;
       background: linear-gradient(135deg,#667eea,#764ba2);
       display: flex; align-items: center; justify-content: center;
-      font-size: 1.6rem; color: #fff; flex-shrink: 0;
+      font-size: 1.5rem; color: #fff; flex-shrink: 0;
       box-shadow: 0 0 0 3px rgba(102,126,234,.35);
     }
-    .bot-info-text h3 {
-      font-size: 1rem; font-weight: 800; color: #fff; margin-bottom: 2px;
+    .bot-info-text {
+      flex: 1;
+      min-width: 0;
     }
-    .bot-info-text span { color: rgba(255,255,255,.45); font-size: .82rem; }
-    .bot-status-badge { margin-left: auto; flex-shrink: 0; }
+    .bot-info-text h3 {
+      font-size: 1rem; font-weight: 800; color: #fff;
+      margin-bottom: 2px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .bot-info-text span {
+      color: rgba(255,255,255,.45); font-size: .82rem;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      display: block;
+    }
+    .bot-status-badge { flex-shrink: 0; }
 
     /* ── Action Buttons ─────────────────────────────────────── */
     .btn-row {
@@ -602,11 +613,11 @@
           <div class="panel-title-icon icon-health">
             <i class="fa-solid fa-heart-pulse"></i>
           </div>
-          <div style="flex:1;">
+          <div style="flex:1; min-width:0;">
             <h2>ꜱʏꜱᴛᴇᴍ ʜᴇᴀʟᴛʜ</h2>
             <p>ʀᴇᴀʟ-ᴛɪᴍᴇ ᴍᴏɴɪᴛᴏʀɪɴɢ</p>
           </div>
-          <div class="live-indicator">
+          <div class="live-indicator" style="flex-shrink:0;">
             <span class="live-dot"></span> ʟɪᴠᴇ
           </div>
         </div>

@@ -8,181 +8,193 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html { min-height: 100%; background-color: #764ba2; }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { min-height: 100%; background-color: #0f0c29; }
+
     body {
       font-family: 'Poppins', sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%) fixed;
-      background-attachment: fixed;
+      background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%) fixed;
       min-height: 100vh;
       overflow-x: hidden;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      padding: 30px 16px 60px;
     }
 
     .bg-animation {
       position: fixed; top: 0; left: 0;
       width: 100%; height: 100%;
-      z-index: 0; overflow: hidden;
+      z-index: 0; overflow: hidden; pointer-events: none;
     }
     .bg-animation span {
       position: absolute; display: block;
-      background: rgba(255,255,255,0.1);
-      animation: animate 25s linear infinite;
-      bottom: -150px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+      animation: floatUp 25s linear infinite;
+      bottom: -200px;
     }
-    .bg-animation span:nth-child(1)  { left:25%; width:80px;  height:80px;  animation-delay:0s; }
-    .bg-animation span:nth-child(2)  { left:10%; width:20px;  height:20px;  animation-delay:2s;  animation-duration:12s; }
-    .bg-animation span:nth-child(3)  { left:70%; width:20px;  height:20px;  animation-delay:4s; }
-    .bg-animation span:nth-child(4)  { left:40%; width:60px;  height:60px;  animation-delay:0s;  animation-duration:18s; }
-    .bg-animation span:nth-child(5)  { left:65%; width:20px;  height:20px;  animation-delay:0s; }
-    .bg-animation span:nth-child(6)  { left:75%; width:110px; height:110px; animation-delay:3s; }
-    .bg-animation span:nth-child(7)  { left:35%; width:150px; height:150px; animation-delay:7s; }
-    .bg-animation span:nth-child(8)  { left:50%; width:25px;  height:25px;  animation-delay:15s; animation-duration:45s; }
-    .bg-animation span:nth-child(9)  { left:20%; width:15px;  height:15px;  animation-delay:2s;  animation-duration:35s; }
-    .bg-animation span:nth-child(10) { left:85%; width:150px; height:150px; animation-delay:0s;  animation-duration:11s; }
-    @keyframes animate {
-      0%   { transform: translateY(0) rotate(0deg);    opacity:1; border-radius:0;   }
-      100% { transform: translateY(-1000px) rotate(720deg); opacity:0; border-radius:50%; }
+    .bg-animation span:nth-child(1)  { left:10%; width:40px;  height:40px;  animation-delay:0s;   animation-duration:20s; }
+    .bg-animation span:nth-child(2)  { left:25%; width:15px;  height:15px;  animation-delay:2s;   animation-duration:14s; }
+    .bg-animation span:nth-child(3)  { left:50%; width:60px;  height:60px;  animation-delay:4s;   animation-duration:22s; }
+    .bg-animation span:nth-child(4)  { left:70%; width:20px;  height:20px;  animation-delay:1s;   animation-duration:18s; }
+    .bg-animation span:nth-child(5)  { left:85%; width:80px;  height:80px;  animation-delay:6s;   animation-duration:30s; }
+    .bg-animation span:nth-child(6)  { left:35%; width:25px;  height:25px;  animation-delay:8s;   animation-duration:16s; }
+    .bg-animation span:nth-child(7)  { left:60%; width:12px;  height:12px;  animation-delay:3s;   animation-duration:12s; }
+    .bg-animation span:nth-child(8)  { left:15%; width:90px;  height:90px;  animation-delay:10s;  animation-duration:35s; }
+    .bg-animation span:nth-child(9)  { left:90%; width:30px;  height:30px;  animation-delay:5s;   animation-duration:24s; }
+    .bg-animation span:nth-child(10) { left:45%; width:18px;  height:18px;  animation-delay:12s;  animation-duration:28s; }
+    @keyframes floatUp {
+      0%   { transform: translateY(0) rotate(0deg);      opacity: 0.7; }
+      100% { transform: translateY(-110vh) rotate(720deg); opacity: 0; }
     }
 
     .container {
       position: relative; z-index: 1;
-      max-width: 720px; width: 90%;
-      padding: 20px;
-      animation: fadeInDown 0.8s ease;
+      width: 100%; max-width: 680px;
+      animation: fadeInDown .7s ease both;
     }
-    .card {
-      background: rgba(255,255,255,0.97);
-      border-radius: 30px;
-      padding: 50px 45px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
-      position: relative;
-      overflow: hidden;
-    }
-    .card::before {
-      content: '';
-      position: absolute; top: 0; left: 0;
-      width: 100%; height: 6px;
-      background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
-    }
-
-    .page-icon {
-      font-size: 3.5rem;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 10px;
-      animation: float 3s ease-in-out infinite;
-    }
-    @keyframes float {
-      0%,100% { transform: translateY(0); }
-      50%      { transform: translateY(-12px); }
-    }
-
-    h1 {
-      font-size: clamp(1.6rem, 4vw, 2.2rem);
-      font-weight: 800;
-      color: #333;
-      margin-bottom: 6px;
-    }
-    .subtitle { color: #888; font-size: .95rem; margin-bottom: 36px; }
-
-    .info-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 14px 0;
-      border-bottom: 1px solid rgba(102,126,234,0.1);
-    }
-    .info-row:last-of-type { border-bottom: none; }
-    .info-label {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      color: #555;
-      font-size: .92rem;
-      font-weight: 500;
-    }
-    .info-label i {
-      width: 22px; text-align: center;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    .info-value {
-      font-weight: 700;
-      color: #333;
-      font-size: .95rem;
-    }
-    .badge {
-      display: inline-block;
-      padding: 3px 12px;
-      border-radius: 999px;
-      font-size: .78rem;
-      font-weight: 700;
-    }
-    .badge-active   { background: rgba(34,197,94,0.12);  color: #16a34a; }
-    .badge-inactive { background: rgba(239,68,68,0.12);  color: #dc2626; }
-
-    .bw-section { margin: 28px 0; }
-    .bw-header  { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .bw-title   { font-weight: 700; color: #444; font-size: .95rem; }
-    .bw-pct     { font-weight: 700; color: #764ba2; font-size: .95rem; }
-    .bw-bar-bg  { height: 12px; background: rgba(102,126,234,0.15); border-radius: 999px; overflow: hidden; margin-bottom: 10px; }
-    .bw-bar-fill { height: 100%; background: linear-gradient(90deg, #667eea, #764ba2); border-radius: 999px; }
-    .bw-meta    { display: flex; justify-content: space-between; font-size: .8rem; color: #888; }
-
-    .btn-row {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 14px;
-      margin-top: 36px;
-    }
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 9px;
-      padding: 13px 28px;
-      border-radius: 50px;
-      font-weight: 700;
-      font-size: .9rem;
-      text-decoration: none;
-      transition: all 0.3s ease;
-    }
-    .btn-primary {
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
-      box-shadow: 0 8px 24px rgba(102,126,234,0.4);
-    }
-    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(102,126,234,0.5); }
-    .btn-tg {
-      background: linear-gradient(135deg, #26a4da, #1e89b8);
-      color: white;
-      box-shadow: 0 8px 24px rgba(38,164,218,0.35);
-    }
-    .btn-tg:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(38,164,218,0.45); }
-
-    .footer-note {
-      margin-top: 28px;
-      color: rgba(255,255,255,0.85);
-      font-size: .9rem;
-      text-align: center;
-    }
-    .footer-note a { color: #ffd700; text-decoration: none; font-weight: 700; }
-    .footer-note a:hover { color: #ffed4e; }
-
     @keyframes fadeInDown {
-      from { opacity:0; transform:translateY(-40px); }
+      from { opacity:0; transform:translateY(-30px); }
       to   { opacity:1; transform:translateY(0); }
     }
+
+    .panel {
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(20px);
+      border-radius: 24px;
+      border: 1px solid rgba(255,255,255,.12);
+      overflow: hidden;
+      box-shadow: 0 24px 64px rgba(0,0,0,.3);
+    }
+
+    .panel-header {
+      padding: 26px 30px 20px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    .panel-title {
+      display: flex; align-items: center; gap: 14px;
+    }
+    .panel-title-icon {
+      width: 48px; height: 48px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #4facfe, #00f2fe);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem; color: #fff; flex-shrink: 0;
+    }
+    .panel-title h2 {
+      font-size: 1.2rem; font-weight: 800;
+      color: #fff; margin-bottom: 2px;
+    }
+    .panel-title p { color: rgba(255,255,255,.45); font-size: .82rem; }
+
+    .panel-body { padding: 26px 30px; }
+
+    .info-section { margin-bottom: 22px; }
+    .info-section-title {
+      font-size: .75rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1px;
+      color: rgba(255,255,255,.35);
+      margin-bottom: 12px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .info-section-title::after {
+      content: ''; flex: 1; height: 1px;
+      background: rgba(255,255,255,.08);
+    }
+
+    .info-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-label {
+      display: flex; align-items: center; gap: 10px;
+      color: rgba(255,255,255,.6); font-size: .88rem; font-weight: 500;
+    }
+    .info-label .il-icon {
+      width: 32px; height: 32px;
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .8rem; flex-shrink: 0;
+    }
+    .info-value { font-weight: 700; color: #fff; font-size: .9rem; }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 12px; border-radius: 999px;
+      font-size: .75rem; font-weight: 700;
+    }
+    .badge::before { content:''; width:7px; height:7px; border-radius:50%; }
+    .badge-ok    { background:rgba(67,233,123,.12); color:#43e97b; }
+    .badge-ok::before  { background:#43e97b; box-shadow:0 0 6px #43e97b; }
+    .badge-error { background:rgba(255,107,107,.12); color:#ff6b6b; }
+    .badge-error::before { background:#ff6b6b; }
+
+    .bw-usage-block { margin-bottom: 22px; }
+    .bw-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 8px;
+    }
+    .bw-label { font-weight: 700; color: rgba(255,255,255,.8); font-size: .9rem; }
+    .bw-pct   { font-weight: 800; color: #4facfe; font-size: .9rem; }
+    .bw-bar-bg {
+      height: 10px;
+      background: rgba(255,255,255,.1);
+      border-radius: 999px; overflow: hidden; margin-bottom: 6px;
+    }
+    .bw-bar-fill {
+      height: 100%; border-radius: 999px;
+      background: linear-gradient(90deg, #4facfe, #00f2fe);
+      transition: width 1.2s cubic-bezier(.4,0,.2,1);
+    }
+    .bw-bar-fill.warn { background: linear-gradient(90deg,#f6d365,#fda085); }
+    .bw-bar-fill.crit { background: linear-gradient(90deg,#ff6b6b,#ee0979); }
+    .bw-meta {
+      display: flex; justify-content: space-between;
+      font-size: .78rem; color: rgba(255,255,255,.35);
+    }
+
+    .btn-row {
+      display: flex; flex-wrap: wrap; justify-content: center;
+      gap: 12px; margin-top: 26px;
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 26px; border-radius: 50px;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 700; font-size: .85rem;
+      text-decoration: none; border: none; cursor: pointer;
+      transition: all .3s ease;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg,#667eea,#764ba2);
+      color: #fff;
+      box-shadow: 0 8px 24px rgba(102,126,234,.4);
+    }
+    .btn-primary:hover { transform:translateY(-3px); box-shadow:0 12px 32px rgba(102,126,234,.55); }
+    .btn-tg {
+      background: linear-gradient(135deg,#26a4da,#1e89b8);
+      color: #fff;
+      box-shadow: 0 8px 24px rgba(38,164,218,.35);
+    }
+    .btn-tg:hover { transform:translateY(-3px); box-shadow:0 12px 32px rgba(38,164,218,.45); }
+
+    .footer-note {
+      margin-top: 26px;
+      color: rgba(255,255,255,.35);
+      font-size: .82rem;
+      text-align: center;
+    }
+    .footer-note a { color: rgba(255,215,0,.75); text-decoration: none; font-weight: 700; }
+    .footer-note a:hover { color: #ffd700; }
+
     @media (max-width: 600px) {
-      .card { padding: 36px 20px; }
-      .btn-row { flex-direction: column; align-items: center; }
-      .btn { width: 100%; justify-content: center; }
+      .panel-header, .panel-body { padding: 20px 18px; }
+      .btn-row { flex-direction: column; align-items: stretch; }
+      .btn { justify-content: center; }
     }
   </style>
 </head>
@@ -193,53 +205,82 @@
   </div>
 
   <div class="container">
-    <div class="card">
-      <div class="page-icon"><i class="fa-solid fa-signal"></i></div>
-      <h1>ʙᴀɴᴅᴡɪᴅᴛʜ</h1>
-      <p class="subtitle">ʀᴇᴀʟ-ᴛɪᴍᴇ ʙᴀɴᴅᴡɪᴅᴛʜ ɪɴꜰᴏ ꜰᴏʀ {{ bot_name }}</p>
-
-      <div class="info-row">
-        <span class="info-label"><i class="fa-solid fa-toggle-on"></i> ꜱᴛᴀᴛᴜꜱ</span>
-        <span class="badge {{ 'badge-active' if bw_mode else 'badge-inactive' }}">
-          {{ 'ᴀᴄᴛɪᴠᴇ' if bw_mode else 'ɪɴᴀᴄᴛɪᴠᴇ' }}
-        </span>
-      </div>
-      <div class="info-row">
-        <span class="info-label"><i class="fa-solid fa-gauge-high"></i> ʟɪᴍɪᴛ</span>
-        <span class="info-value">{{ bw_limit }}</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label"><i class="fa-solid fa-upload"></i> ᴜꜱᴇᴅ (ᴛᴏᴛᴀʟ)</span>
-        <span class="info-value">{{ bw_used }}</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label"><i class="fa-solid fa-calendar-day"></i> ᴜꜱᴇᴅ ᴛᴏᴅᴀʏ</span>
-        <span class="info-value">{{ bw_today }}</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label"><i class="fa-solid fa-battery-half"></i> ʀᴇᴍᴀɪɴɪɴɢ</span>
-        <span class="info-value">{{ bw_remaining }}</span>
-      </div>
-
-      <div class="bw-section">
-        <div class="bw-header">
-          <span class="bw-title">ᴜꜱᴀɢᴇ</span>
-          <span class="bw-pct">{{ bw_pct }}%</span>
-        </div>
-        <div class="bw-bar-bg">
-          <div class="bw-bar-fill" style="width: {{ bw_pct }}%;"></div>
-        </div>
-        <div class="bw-meta">
-          <span>{{ bw_used }} ᴜꜱᴇᴅ</span>
-          <span>{{ bw_limit }} ᴛᴏᴛᴀʟ</span>
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <div class="panel-title-icon">
+            <i class="fa-solid fa-satellite-dish"></i>
+          </div>
+          <div>
+            <h2>ʙᴀɴᴅᴡɪᴅᴛʜ ɪɴꜰᴏ</h2>
+            <p>ʀᴇᴀʟ-ᴛɪᴍᴇ ᴅᴀᴛᴀ ᴛʀᴀɴꜱꜰᴇʀ ᴏᴠᴇʀᴠɪᴇᴡ ꜰᴏʀ {{ bot_name }}</p>
+          </div>
         </div>
       </div>
 
-      <div class="btn-row">
-        <a href="/" class="btn btn-primary"><i class="fa-solid fa-house"></i> ʜᴏᴍᴇ</a>
-        <a href="https://t.me/{{ bot_username }}" target="_blank" class="btn btn-tg">
-          <i class="fa-brands fa-telegram"></i> ᴏᴘᴇɴ ʙᴏᴛ
-        </a>
+      <div class="panel-body">
+        <div class="info-section">
+          <div class="info-section-title"><i class="fa-solid fa-circle-info"></i> ᴄᴜʀʀᴇɴᴛ ꜱᴛᴀᴛᴜꜱ</div>
+          <div class="info-row">
+            <span class="info-label">
+              <span class="il-icon" style="background:rgba(102,126,234,.2)"><i class="fa-solid fa-toggle-on" style="color:#667eea"></i></span>
+              ʙᴡ ᴍᴏᴅᴇ
+            </span>
+            <span class="badge {{ 'badge-ok' if bw_mode else 'badge-error' }}">
+              {{ 'ᴀᴄᴛɪᴠᴇ' if bw_mode else 'ɪɴᴀᴄᴛɪᴠᴇ' }}
+            </span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">
+              <span class="il-icon" style="background:rgba(79,172,254,.2)"><i class="fa-solid fa-gauge-high" style="color:#4facfe"></i></span>
+              ʟɪᴍɪᴛ
+            </span>
+            <span class="info-value">{{ bw_limit }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">
+              <span class="il-icon" style="background:rgba(246,211,101,.2)"><i class="fa-solid fa-upload" style="color:#f6d365"></i></span>
+              ᴜꜱᴇᴅ (ᴛᴏᴛᴀʟ)
+            </span>
+            <span class="info-value">{{ bw_used }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">
+              <span class="il-icon" style="background:rgba(250,112,154,.2)"><i class="fa-solid fa-calendar-day" style="color:#fa709a"></i></span>
+              ᴜꜱᴇᴅ ᴛᴏᴅᴀʏ
+            </span>
+            <span class="info-value">{{ bw_today }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">
+              <span class="il-icon" style="background:rgba(67,233,123,.2)"><i class="fa-solid fa-battery-three-quarters" style="color:#43e97b"></i></span>
+              ʀᴇᴍᴀɪɴɪɴɢ
+            </span>
+            <span class="info-value">{{ bw_remaining }}</span>
+          </div>
+        </div>
+
+        <div class="bw-usage-block">
+          <div class="bw-header">
+            <span class="bw-label">ᴜꜱᴀɢᴇ ᴘʀᴏɢʀᴇꜱꜱ</span>
+            <span class="bw-pct">{{ bw_pct }}%</span>
+          </div>
+          <div class="bw-bar-bg">
+            <div class="bw-bar-fill {% if bw_pct > 90 %}crit{% elif bw_pct > 70 %}warn{% endif %}"
+                 style="width:{{ bw_pct }}%;"></div>
+          </div>
+          <div class="bw-meta">
+            <span>{{ bw_used }} ᴜꜱᴇᴅ</span>
+            <span>{{ bw_limit }} ᴛᴏᴛᴀʟ</span>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <a href="/" class="btn btn-primary"><i class="fa-solid fa-house"></i> ʜᴏᴍᴇ</a>
+          <a href="https://t.me/{{ bot_username }}" target="_blank" class="btn btn-tg">
+            <i class="fa-brands fa-telegram"></i> ᴏᴘᴇɴ ʙᴏᴛ
+          </a>
+        </div>
       </div>
     </div>
 

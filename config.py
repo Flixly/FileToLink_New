@@ -1,11 +1,8 @@
 import os
-import time
 import logging
-import sys
 from dotenv import load_dotenv
 
 load_dotenv()
-
 
 logger = logging.getLogger(__name__)
 
@@ -25,8 +22,6 @@ class Config:
     FILE_TYPE_IMAGE    = "image"
     FILE_TYPE_DOCUMENT = "document"
 
-    BOT_USERNAME = DEFAULT_BOT_USERNAME
-    BOT_NAME     = DEFAULT_BOT_NAME
     UPTIME: float = 0.0
 
     OWNER_ID = list(
@@ -38,9 +33,8 @@ class Config:
     DATABASE_NAME = os.environ.get("DATABASE_NAME", "FileStream_New_bot")
 
     LOGS_CHAT_ID = int(os.environ.get("LOGS_CHAT_ID", "0"))
-
     FLOG_CHAT_ID = int(os.environ.get("FLOG_CHAT_ID", "0"))
-    
+
     Start_IMG = os.environ.get("Start_IMG", "")
     Files_IMG = os.environ.get("Files_IMG", "")
 

@@ -24,15 +24,11 @@ class Database:
         self.config     = self.db.config
 
     async def init_db(self):
-        """Create all required indexes only if they do not already exist."""
         try:
-            # Helper: build set of existing index key-names for a collection
             async def _existing(col):
                 info = await col.index_information()
-                # Each value has a 'key' list like [('field', 1), ...]
                 return {v['key'][0][0] for v in info.values() if v.get('key')}
 
-            # ── files collection ──────────────────────────────────────────────
             files_idx = await _existing(self.files)
             if 'file_id'    not in files_idx:
                 await self.files.create_index('file_id',    unique=True)
@@ -43,19 +39,16 @@ class Database:
             if 'created_at' not in files_idx:
                 await self.files.create_index('created_at')
 
-            # ── users collection ──────────────────────────────────────────────
             users_idx = await _existing(self.users)
             if 'user_id'       not in users_idx:
                 await self.users.create_index('user_id',      unique=True)
             if 'last_activity' not in users_idx:
                 await self.users.create_index('last_activity')
 
-            # ── bandwidth collection ──────────────────────────────────────────
             bw_idx = await _existing(self.bandwidth)
             if 'date' not in bw_idx:
                 await self.bandwidth.create_index('date')
 
-            # ── sudo_users collection ─────────────────────────────────────────
             sudo_idx = await _existing(self.sudo_users)
             if 'user_id' not in sudo_idx:
                 await self.sudo_users.create_index('user_id', unique=True)
@@ -118,7 +111,6 @@ class Database:
             return 0
 
     async def get_user_files(self, user_id: str, limit: int = 50) -> List[Dict]:
-        """Return files for a user.  limit=0 means return all files."""
         try:
             cursor = self.files.find({"user_id": user_id}).sort("created_at", -1)
             if limit and limit > 0:
@@ -130,12 +122,6 @@ class Database:
             return []
 
     async def find_files(self, user_id, page_range: list) -> tuple:
-        """
-        Return (cursor, total_count) for paginated file listing.
-
-        page_range = [skip, limit], e.g. [0, 10] for first page.
-        Returns an async cursor and the total document count.
-        """
         try:
             skip  = page_range[0] - 1 if page_range[0] > 0 else 0
             limit = page_range[1]
@@ -152,7 +138,6 @@ class Database:
             return self.files.find({"user_id": str(user_id)}).limit(0), 0
 
     async def delete_user_files(self, user_id: str) -> int:
-        """Delete all files belonging to a specific user. Returns the number deleted."""
         try:
             result = await self.files.delete_many({"user_id": str(user_id)})
             return result.deleted_count
@@ -161,7 +146,6 @@ class Database:
             return 0
 
     async def update_bandwidth(self, size: int) -> bool:
-        """Increment today's bandwidth counter in the daily tracking collection."""
         try:
             today = datetime.utcnow().date().isoformat()
             await self.bandwidth.update_one(
@@ -178,19 +162,11 @@ class Database:
             return False
 
     async def track_bandwidth(self, message_id: str, size: int) -> bool:
-        """Record bandwidth used for a file stream/download.
-        
-        Updates both the per-file counter and the global daily bandwidth log.
-        Only actual bytes sent should be passed (never the full Content-Length
-        for a partial range request that was never fully consumed).
-        """
         try:
-            # Per-file bandwidth (useful for per-file stats / future analytics)
             await self.files.update_one(
                 {"message_id": message_id},
                 {"$inc": {"bandwidth_used": size}},
             )
-            # Global daily bandwidth log (used for limit checks & admin stats)
             await self.update_bandwidth(size)
             return True
         except Exception as e:
@@ -198,10 +174,8 @@ class Database:
             return False
 
     async def reset_bandwidth(self) -> bool:
-        """Wipe all bandwidth records (admin reset action)."""
         try:
             await self.bandwidth.delete_many({})
-            # Also zero out per-file bandwidth counters
             await self.files.update_many({}, {"$set": {"bandwidth_used": 0}})
             return True
         except Exception as e:
@@ -316,7 +290,6 @@ class Database:
             return []
 
     async def get_user_count(self) -> int:
-        """Return total registered users count."""
         try:
             return await self.users.count_documents({})
         except Exception as e:

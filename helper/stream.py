@@ -288,7 +288,6 @@ class StreamingService:
         if not file_data:
             raise web.HTTPNotFound(reason="file not found")
 
-        # ── Bandwidth guard ────────────────────────────────────────────────
         if Config.get("bandwidth_mode", True):
             stats  = await self.db.get_bandwidth_stats()
             max_bw = Config.get("max_bandwidth", 107374182400)
@@ -299,15 +298,13 @@ class StreamingService:
         file_name  = file_data["file_name"]
         message_id = str(file_data["message_id"])
 
-        # ── Resolve FileId BEFORE preparing the response so we can still
-        #    raise HTTP errors (once response.prepare() is called it's too late)
+        # Resolve FileId before preparing response (HTTP errors can't be sent after prepare)
         try:
             file_id = await self.streamer.get_file_properties(message_id)
         except Exception as exc:
             logger.error("get_file_properties failed: msg=%s err=%s", message_id, exc)
             raise web.HTTPNotFound(reason="could not resolve file on Telegram")
 
-        # ── Parse Range header ─────────────────────────────────────────────
         range_header            = request.headers.get("Range", "")
         from_bytes, until_bytes = _parse_range(range_header, file_size)
 
@@ -331,7 +328,6 @@ class StreamingService:
             message_id, file_size, from_bytes, until_bytes, offset, part_count,
         )
 
-        # ── MIME type ──────────────────────────────────────────────────────
         mime = (
             file_data.get("mime_type")
             or mimetypes.guess_type(file_name)[0]
@@ -346,7 +342,6 @@ class StreamingService:
         is_range_request = bool(range_header)
         status           = 206 if is_range_request else 200
 
-        # ── Build headers ──────────────────────────────────────────────────
         headers = {
             "Content-Type":                mime,
             "Content-Length":              str(req_length),
@@ -363,7 +358,6 @@ class StreamingService:
         response = web.StreamResponse(status=status, headers=headers)
         await response.prepare(request)
 
-        # ── Stream chunks — count only bytes actually sent ─────────────────
         bytes_sent = 0
         try:
             async for chunk in self.streamer.yield_file(
