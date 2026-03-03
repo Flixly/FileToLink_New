@@ -10,7 +10,7 @@ import aiohttp_jinja2
 import jinja2
 
 from bot import Bot
-from config import Config, DEFAULT_BOT_NAME, DEFAULT_BOT_USERNAME
+from config import Config
 from database import Database
 from helper import StreamingService, check_bandwidth_limit, format_size
 
