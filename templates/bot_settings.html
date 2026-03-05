@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ʙᴏᴛ ꜱᴇᴛᴛɪɴɢꜱ | {{ bot_name }}</title>
+  <title>Bot Settings | {{ bot_name }}</title>
   <link rel="icon" type="image/jpeg" href="https://i.ibb.co/2YsHg8tf/IMG-3062.jpg">
   <link rel="shortcut icon" type="image/jpeg" href="https://i.ibb.co/2YsHg8tf/IMG-3062.jpg">
   <link rel="apple-touch-icon" href="https://i.ibb.co/2YsHg8tf/IMG-3062.jpg">
@@ -13,98 +13,96 @@
     /* ── CSS Custom Properties ──────────────────────────────── */
     :root,
     [data-theme="dark"] {
-      --bg-base:          #0f0c29;
-      --bg-gradient:      linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
-      --card-bg:          rgba(255,255,255,0.05);
-      --card-border:      rgba(255,255,255,.12);
-      --card-shadow:      0 24px 64px rgba(0,0,0,.3);
-      --panel-bg:         rgba(255,255,255,0.05);
-      --panel-border:     rgba(255,255,255,.12);
-      --stat-bg:          rgba(255,255,255,.07);
-      --stat-border:      rgba(255,255,255,.1);
-      --tab-bg:           rgba(255,255,255,.07);
-      --tab-border:       rgba(255,255,255,.1);
-      --tab-hover-bg:     rgba(255,255,255,.1);
-      --btn-ghost-bg:     rgba(255,255,255,.08);
-      --btn-ghost-border: rgba(255,255,255,.15);
-      --btn-ghost-color:  rgba(255,255,255,.7);
-      --btn-ghost-hover:  rgba(255,255,255,.14);
-      --text-primary:     #ffffff;
-      --text-secondary:   rgba(255,255,255,.55);
-      --text-muted:       rgba(255,255,255,.35);
-      --text-label:       rgba(255,255,255,.45);
-      --text-info-label:  rgba(255,255,255,.6);
-      --info-row-border:  rgba(255,255,255,.06);
-      --section-line:     rgba(255,255,255,.08);
-      --bw-bar-bg:        rgba(255,255,255,.1);
-      --progress-track:   rgba(255,255,255,.08);
-      --badge-ok-bg:      rgba(67,233,123,.12);
-      --badge-ok-color:   #43e97b;
-      --badge-warn-bg:    rgba(246,211,101,.12);
-      --badge-warn-color: #f6d365;
-      --badge-init-bg:    rgba(79,172,254,.12);
-      --badge-init-color: #4facfe;
-      --badge-err-bg:     rgba(255,107,107,.12);
-      --badge-err-color:  #ff6b6b;
-      --avatar-border:    rgba(102,126,234,.35);
-      --particle-color:   rgba(255,255,255,0.06);
-      --footer-link:      rgba(255,215,0,.75);
-      --footer-hover:     #ffd700;
-      --theme-toggle-bg:  rgba(255,255,255,.08);
-      --theme-toggle-border: rgba(255,255,255,.15);
-      --theme-toggle-color: rgba(255,255,255,.7);
+      --bg-base:           #0f0c29;
+      --bg-gradient:       linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+      --card-bg:           rgba(255,255,255,0.06);
+      --card-border:       rgba(255,255,255,.13);
+      --card-shadow:       0 24px 64px rgba(0,0,0,.35);
+      --panel-bg:          rgba(255,255,255,0.06);
+      --panel-border:      rgba(255,255,255,.13);
+      --stat-bg:           rgba(255,255,255,.08);
+      --stat-border:       rgba(255,255,255,.11);
+      --tab-bg:            rgba(255,255,255,.07);
+      --tab-border:        rgba(255,255,255,.11);
+      --tab-hover-bg:      rgba(255,255,255,.11);
+      --btn-ghost-bg:      rgba(255,255,255,.09);
+      --btn-ghost-border:  rgba(255,255,255,.16);
+      --btn-ghost-color:   rgba(255,255,255,.75);
+      --btn-ghost-hover:   rgba(255,255,255,.15);
+      --text-primary:      #ffffff;
+      --text-secondary:    rgba(255,255,255,.6);
+      --text-muted:        rgba(255,255,255,.38);
+      --text-label:        rgba(255,255,255,.48);
+      --text-info-label:   rgba(255,255,255,.65);
+      --info-row-border:   rgba(255,255,255,.07);
+      --section-line:      rgba(255,255,255,.09);
+      --bw-bar-bg:         rgba(255,255,255,.11);
+      --progress-track:    rgba(255,255,255,.09);
+      --badge-ok-bg:       rgba(67,233,123,.13);
+      --badge-ok-color:    #43e97b;
+      --badge-warn-bg:     rgba(246,211,101,.13);
+      --badge-warn-color:  #f6d365;
+      --badge-init-bg:     rgba(79,172,254,.13);
+      --badge-init-color:  #4facfe;
+      --badge-err-bg:      rgba(255,107,107,.13);
+      --badge-err-color:   #ff6b6b;
+      --avatar-border:     rgba(102,126,234,.38);
+      --particle-color:    rgba(160,140,255,0.18);
+      --particle-color2:   rgba(102,126,234,0.14);
+      --footer-link:       rgba(255,215,0,.8);
+      --footer-hover:      #ffd700;
+      --toggle-bg:         rgba(255,255,255,.08);
+      --toggle-border:     rgba(255,255,255,.18);
+      --toggle-color:      rgba(255,255,255,.8);
     }
 
     [data-theme="light"] {
-      --bg-base:          #f0f2f8;
-      --bg-gradient:      linear-gradient(135deg, #e8eaf6 0%, #ede7f6 50%, #e3e8f0 100%);
-      --card-bg:          rgba(255,255,255,0.85);
-      --card-border:      rgba(102,126,234,.18);
-      --card-shadow:      0 24px 64px rgba(102,126,234,.12);
-      --panel-bg:         rgba(255,255,255,0.9);
-      --panel-border:     rgba(102,126,234,.15);
-      --stat-bg:          rgba(255,255,255,.9);
-      --stat-border:      rgba(102,126,234,.15);
-      --tab-bg:           rgba(255,255,255,.7);
-      --tab-border:       rgba(102,126,234,.2);
-      --tab-hover-bg:     rgba(102,126,234,.08);
-      --btn-ghost-bg:     rgba(102,126,234,.08);
-      --btn-ghost-border: rgba(102,126,234,.2);
-      --btn-ghost-color:  #4a5568;
-      --btn-ghost-hover:  rgba(102,126,234,.14);
-      --text-primary:     #1a1a2e;
-      --text-secondary:   #4a5568;
-      --text-muted:       #8896a8;
-      --text-label:       #718096;
-      --text-info-label:  #4a5568;
-      --info-row-border:  rgba(102,126,234,.08);
-      --section-line:     rgba(102,126,234,.1);
-      --bw-bar-bg:        rgba(102,126,234,.12);
-      --progress-track:   rgba(102,126,234,.1);
-      --badge-ok-bg:      rgba(67,233,123,.15);
-      --badge-ok-color:   #16a34a;
-      --badge-warn-bg:    rgba(246,211,101,.18);
-      --badge-warn-color: #b45309;
-      --badge-init-bg:    rgba(79,172,254,.15);
-      --badge-init-color: #1d6fa8;
-      --badge-err-bg:     rgba(255,107,107,.15);
-      --badge-err-color:  #c0392b;
-      --avatar-border:    rgba(102,126,234,.25);
-      --particle-color:   rgba(102,126,234,0.06);
-      --footer-link:      #7c6c1a;
-      --footer-hover:     #5a4c10;
-      --theme-toggle-bg:  rgba(102,126,234,.1);
-      --theme-toggle-border: rgba(102,126,234,.25);
-      --theme-toggle-color: #4a5568;
+      --bg-base:           #eef0fb;
+      --bg-gradient:       linear-gradient(135deg, #e8eaf6 0%, #ede7f6 50%, #e3e8f0 100%);
+      --card-bg:           rgba(255,255,255,0.88);
+      --card-border:       rgba(102,126,234,.2);
+      --card-shadow:       0 24px 64px rgba(102,126,234,.14);
+      --panel-bg:          rgba(255,255,255,0.92);
+      --panel-border:      rgba(102,126,234,.18);
+      --stat-bg:           rgba(255,255,255,.92);
+      --stat-border:       rgba(102,126,234,.17);
+      --tab-bg:            rgba(255,255,255,.75);
+      --tab-border:        rgba(102,126,234,.22);
+      --tab-hover-bg:      rgba(102,126,234,.09);
+      --btn-ghost-bg:      rgba(102,126,234,.09);
+      --btn-ghost-border:  rgba(102,126,234,.22);
+      --btn-ghost-color:   #4a5568;
+      --btn-ghost-hover:   rgba(102,126,234,.15);
+      --text-primary:      #1a1a2e;
+      --text-secondary:    #4a5568;
+      --text-muted:        #8896a8;
+      --text-label:        #718096;
+      --text-info-label:   #4a5568;
+      --info-row-border:   rgba(102,126,234,.09);
+      --section-line:      rgba(102,126,234,.12);
+      --bw-bar-bg:         rgba(102,126,234,.13);
+      --progress-track:    rgba(102,126,234,.11);
+      --badge-ok-bg:       rgba(67,233,123,.15);
+      --badge-ok-color:    #16a34a;
+      --badge-warn-bg:     rgba(246,211,101,.18);
+      --badge-warn-color:  #b45309;
+      --badge-init-bg:     rgba(79,172,254,.15);
+      --badge-init-color:  #1d6fa8;
+      --badge-err-bg:      rgba(255,107,107,.15);
+      --badge-err-color:   #c0392b;
+      --avatar-border:     rgba(102,126,234,.28);
+      --particle-color:    rgba(102,126,234,0.22);
+      --particle-color2:   rgba(118,75,162,0.16);
+      --footer-link:       #7c6c1a;
+      --footer-hover:      #5a4c10;
+      --toggle-bg:         rgba(102,126,234,.12);
+      --toggle-border:     rgba(102,126,234,.3);
+      --toggle-color:      #4a5568;
     }
 
     /* ── Reset ──────────────────────────────────────────────── */
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    html {
-      min-height: 100%;
-      background-color: var(--bg-base);
-      overscroll-behavior: none;
-    }
+    html { min-height: 100%; background-color: var(--bg-base); overscroll-behavior: none; }
 
     body {
       font-family: 'Poppins', sans-serif;
@@ -116,36 +114,34 @@
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
-      padding: 30px 16px 60px;
-      transition: background .4s ease, color .4s ease;
+      padding: 34px 16px 64px;
+      transition: background .45s ease, color .45s ease;
     }
 
-    /* ── Theme Toggle Button ─────────────────────────────────── */
+    /* ── Theme Toggle (left) ─────────────────────────────────── */
     .theme-toggle {
       position: fixed;
-      top: 18px;
-      right: 18px;
+      top: 18px; left: 18px;
       z-index: 1000;
-      width: 44px;
-      height: 44px;
+      width: 48px; height: 48px;
       border-radius: 50%;
-      background: var(--theme-toggle-bg);
-      border: 1px solid var(--theme-toggle-border);
-      color: var(--theme-toggle-color);
-      font-size: 1.1rem;
+      background: var(--toggle-bg);
+      border: 1px solid var(--toggle-border);
+      color: var(--toggle-color);
+      font-size: 1.15rem;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all .3s ease;
-      backdrop-filter: blur(12px);
+      display: flex; align-items: center; justify-content: center;
+      transition: all .35s cubic-bezier(.34,1.56,.64,1);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: 0 2px 12px rgba(0,0,0,.15);
     }
     .theme-toggle:hover {
-      transform: scale(1.1) rotate(20deg);
+      transform: scale(1.15) rotate(15deg);
       background: linear-gradient(135deg, #667eea, #764ba2);
       color: #fff;
       border-color: transparent;
-      box-shadow: 0 4px 18px rgba(102,126,234,.45);
+      box-shadow: 0 6px 22px rgba(102,126,234,.5);
     }
 
     /* ── Background Particles ───────────────────────────────── */
@@ -157,137 +153,138 @@
     .bg-animation span {
       position: absolute; display: block;
       border-radius: 50%;
-      background: var(--particle-color);
       animation: floatUp 25s linear infinite;
       bottom: -200px;
     }
-    .bg-animation span:nth-child(1)  { left:10%; width:40px;  height:40px;  animation-delay:0s;   animation-duration:20s; }
-    .bg-animation span:nth-child(2)  { left:25%; width:15px;  height:15px;  animation-delay:2s;   animation-duration:14s; }
-    .bg-animation span:nth-child(3)  { left:50%; width:60px;  height:60px;  animation-delay:4s;   animation-duration:22s; }
-    .bg-animation span:nth-child(4)  { left:70%; width:20px;  height:20px;  animation-delay:1s;   animation-duration:18s; }
-    .bg-animation span:nth-child(5)  { left:85%; width:80px;  height:80px;  animation-delay:6s;   animation-duration:30s; }
-    .bg-animation span:nth-child(6)  { left:35%; width:25px;  height:25px;  animation-delay:8s;   animation-duration:16s; }
-    .bg-animation span:nth-child(7)  { left:60%; width:12px;  height:12px;  animation-delay:3s;   animation-duration:12s; }
-    .bg-animation span:nth-child(8)  { left:15%; width:90px;  height:90px;  animation-delay:10s;  animation-duration:35s; }
-    .bg-animation span:nth-child(9)  { left:90%; width:30px;  height:30px;  animation-delay:5s;   animation-duration:24s; }
-    .bg-animation span:nth-child(10) { left:45%; width:18px;  height:18px;  animation-delay:12s;  animation-duration:28s; }
+    .bg-animation span:nth-child(odd)  { background: var(--particle-color); }
+    .bg-animation span:nth-child(even) { background: var(--particle-color2); }
+    .bg-animation span:nth-child(1)  { left:8%;  width:44px; height:44px; animation-delay:0s;   animation-duration:20s; }
+    .bg-animation span:nth-child(2)  { left:22%; width:18px; height:18px; animation-delay:2s;   animation-duration:14s; }
+    .bg-animation span:nth-child(3)  { left:50%; width:65px; height:65px; animation-delay:4s;   animation-duration:22s; }
+    .bg-animation span:nth-child(4)  { left:68%; width:22px; height:22px; animation-delay:1s;   animation-duration:18s; }
+    .bg-animation span:nth-child(5)  { left:83%; width:85px; height:85px; animation-delay:6s;   animation-duration:30s; }
+    .bg-animation span:nth-child(6)  { left:33%; width:28px; height:28px; animation-delay:8s;   animation-duration:16s; }
+    .bg-animation span:nth-child(7)  { left:58%; width:14px; height:14px; animation-delay:3s;   animation-duration:12s; }
+    .bg-animation span:nth-child(8)  { left:13%; width:95px; height:95px; animation-delay:10s;  animation-duration:35s; }
+    .bg-animation span:nth-child(9)  { left:88%; width:32px; height:32px; animation-delay:5s;   animation-duration:24s; }
+    .bg-animation span:nth-child(10) { left:43%; width:20px; height:20px; animation-delay:12s;  animation-duration:28s; }
     @keyframes floatUp {
-      0%   { transform: translateY(0) rotate(0deg);     opacity: 0.7; }
+      0%   { transform: translateY(0) rotate(0deg);       opacity: 0.12; }
+      15%  { opacity: 0.9; }
+      85%  { opacity: 0.6; }
       100% { transform: translateY(-110vh) rotate(720deg); opacity: 0; }
     }
 
     /* ── Container ──────────────────────────────────────────── */
     .container {
       position: relative; z-index: 1;
-      width: 100%; max-width: 820px;
-      animation: fadeInDown .7s ease both;
+      width: 100%; max-width: 840px;
+      animation: fadeInDown .7s cubic-bezier(.22,.61,.36,1) both;
     }
     @keyframes fadeInDown {
-      from { opacity:0; transform:translateY(-30px); }
+      from { opacity:0; transform:translateY(-28px); }
       to   { opacity:1; transform:translateY(0); }
     }
 
     /* ── Header ─────────────────────────────────────────────── */
-    .header {
-      text-align: center;
-      margin-bottom: 28px;
-    }
+    .header { text-align: center; margin-bottom: 30px; }
     .header-icon {
-      width: 72px; height: 72px;
-      border-radius: 22px;
+      width: 74px; height: 74px;
+      border-radius: 24px;
       background: linear-gradient(135deg, #667eea, #764ba2);
       display: inline-flex; align-items: center; justify-content: center;
       font-size: 2rem; color: #fff;
-      box-shadow: 0 12px 36px rgba(102,126,234,.5);
-      margin-bottom: 14px;
-      animation: pulse-icon 3s ease-in-out infinite;
+      box-shadow: 0 14px 38px rgba(102,126,234,.52);
+      margin-bottom: 16px;
+      animation: pulse-icon 3.2s ease-in-out infinite;
     }
     @keyframes pulse-icon {
-      0%,100% { box-shadow: 0 12px 36px rgba(102,126,234,.5); transform: scale(1); }
-      50%      { box-shadow: 0 16px 48px rgba(102,126,234,.8); transform: scale(1.04); }
+      0%,100% { box-shadow: 0 14px 38px rgba(102,126,234,.5);  transform: scale(1);    }
+      50%      { box-shadow: 0 18px 50px rgba(102,126,234,.78); transform: scale(1.04); }
     }
     .header h1 {
       font-size: clamp(1.5rem, 4vw, 2rem);
       font-weight: 800;
       color: var(--text-primary);
       letter-spacing: -.3px;
-      margin-bottom: 4px;
+      margin-bottom: 5px;
     }
-    .header p { color: var(--text-secondary); font-size: .9rem; }
+    .header p { color: var(--text-secondary); font-size: .92rem; }
 
     /* ── Tabs ────────────────────────────────────────────────── */
     .tab-nav {
       display: flex;
       background: var(--tab-bg);
-      border-radius: 18px;
+      border-radius: 20px;
       padding: 6px;
-      margin-bottom: 24px;
+      margin-bottom: 26px;
       gap: 6px;
-      backdrop-filter: blur(12px);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
       border: 1px solid var(--tab-border);
     }
     .tab-btn {
       flex: 1;
       display: flex; align-items: center; justify-content: center; gap: 8px;
       padding: 12px 10px;
-      border-radius: 13px;
+      border-radius: 14px;
       border: none; cursor: pointer;
       font-family: 'Poppins', sans-serif;
-      font-weight: 700; font-size: .82rem;
+      font-weight: 700; font-size: .84rem;
       color: var(--text-label);
       background: transparent;
-      transition: all .3s ease;
+      transition: all .3s cubic-bezier(.34,1.56,.64,1);
       white-space: nowrap;
     }
     .tab-btn i { font-size: 1rem; }
     .tab-btn.active {
       background: linear-gradient(135deg, #667eea, #764ba2);
       color: #fff;
-      box-shadow: 0 6px 20px rgba(102,126,234,.45);
+      box-shadow: 0 6px 22px rgba(102,126,234,.45);
     }
     .tab-btn:not(.active):hover {
       background: var(--tab-hover-bg);
       color: var(--text-primary);
+      transform: translateY(-1px);
     }
 
     /* ── Panel Card ─────────────────────────────────────────── */
     .panel {
       display: none;
       background: var(--panel-bg);
-      backdrop-filter: blur(20px);
-      border-radius: 24px;
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border-radius: 26px;
       border: 1px solid var(--panel-border);
       overflow: hidden;
       box-shadow: var(--card-shadow);
     }
-    .panel.active { display: block; animation: slideIn .35s ease both; }
+    .panel.active { display: block; animation: slideIn .38s cubic-bezier(.22,.61,.36,1) both; }
     @keyframes slideIn {
-      from { opacity:0; transform:translateY(12px); }
+      from { opacity:0; transform:translateY(14px); }
       to   { opacity:1; transform:translateY(0); }
     }
 
     .panel-header {
-      padding: 28px 32px 20px;
+      padding: 28px 32px 22px;
       border-bottom: 1px solid var(--section-line);
     }
-    .panel-title {
-      display: flex; align-items: center; gap: 14px;
-    }
+    .panel-title { display: flex; align-items: center; gap: 14px; }
     .panel-title-icon {
-      width: 48px; height: 48px;
-      border-radius: 14px;
+      width: 50px; height: 50px;
+      border-radius: 15px;
       display: flex; align-items: center; justify-content: center;
       font-size: 1.3rem; flex-shrink: 0;
     }
-    .icon-stats  { background: linear-gradient(135deg, #f6d365, #fda085); color: #fff; }
-    .icon-bw     { background: linear-gradient(135deg, #4facfe, #00f2fe); color: #fff; }
-    .icon-health { background: linear-gradient(135deg, #43e97b, #38f9d7); color: #fff; }
+    .icon-stats  { background: linear-gradient(135deg, #f6d365, #fda085); color: #fff; box-shadow: 0 6px 18px rgba(246,211,101,.3); }
+    .icon-bw     { background: linear-gradient(135deg, #4facfe, #00f2fe); color: #fff; box-shadow: 0 6px 18px rgba(79,172,254,.3); }
+    .icon-health { background: linear-gradient(135deg, #43e97b, #38f9d7); color: #fff; box-shadow: 0 6px 18px rgba(67,233,123,.3); }
 
     .panel-title h2 {
-      font-size: 1.25rem; font-weight: 800;
+      font-size: 1.28rem; font-weight: 800;
       color: var(--text-primary); margin-bottom: 2px;
     }
-    .panel-title p { color: var(--text-label); font-size: .82rem; }
+    .panel-title p { color: var(--text-label); font-size: .84rem; }
 
     .panel-body { padding: 28px 32px; }
 
@@ -301,29 +298,35 @@
     .stat-card {
       background: var(--stat-bg);
       border: 1px solid var(--stat-border);
-      border-radius: 18px;
+      border-radius: 20px;
       padding: 22px 16px 18px;
       text-align: center;
-      transition: transform .25s ease, box-shadow .25s ease;
+      transition: transform .28s cubic-bezier(.34,1.56,.64,1),
+                  box-shadow .28s ease;
     }
-    .stat-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,.15); }
+    .stat-card:hover {
+      transform: translateY(-6px) scale(1.02);
+      box-shadow: 0 14px 36px rgba(0,0,0,.16);
+    }
     .stat-icon-wrap {
-      width: 52px; height: 52px;
-      border-radius: 15px;
+      width: 54px; height: 54px;
+      border-radius: 16px;
       display: flex; align-items: center; justify-content: center;
       font-size: 1.3rem;
-      margin: 0 auto 12px;
+      margin: 0 auto 13px;
+      transition: transform .3s cubic-bezier(.34,1.56,.64,1);
     }
-    .si-users   { background: linear-gradient(135deg,#667eea,#764ba2); color:#fff; }
-    .si-chats   { background: linear-gradient(135deg,#26a4da,#1e89b8); color:#fff; }
-    .si-files   { background: linear-gradient(135deg,#f6d365,#fda085); color:#fff; }
-    .si-ram     { background: linear-gradient(135deg,#43e97b,#38f9d7); color:#fff; }
-    .si-cpu     { background: linear-gradient(135deg,#fa709a,#fee140); color:#fff; }
-    .si-uptime  { background: linear-gradient(135deg,#4facfe,#00f2fe); color:#fff; }
+    .stat-card:hover .stat-icon-wrap { transform: scale(1.1) rotate(-5deg); }
+    .si-users  { background: linear-gradient(135deg,#667eea,#764ba2); color:#fff; box-shadow: 0 6px 16px rgba(102,126,234,.3); }
+    .si-chats  { background: linear-gradient(135deg,#26a4da,#1e89b8); color:#fff; box-shadow: 0 6px 16px rgba(38,164,218,.28); }
+    .si-files  { background: linear-gradient(135deg,#f6d365,#fda085); color:#fff; box-shadow: 0 6px 16px rgba(246,211,101,.28); }
+    .si-ram    { background: linear-gradient(135deg,#43e97b,#38f9d7); color:#fff; box-shadow: 0 6px 16px rgba(67,233,123,.28); }
+    .si-cpu    { background: linear-gradient(135deg,#fa709a,#fee140); color:#fff; box-shadow: 0 6px 16px rgba(250,112,154,.28); }
+    .si-uptime { background: linear-gradient(135deg,#4facfe,#00f2fe); color:#fff; box-shadow: 0 6px 16px rgba(79,172,254,.28); }
 
     .stat-value {
       font-size: 1.55rem; font-weight: 800;
-      color: var(--text-primary); line-height: 1; margin-bottom: 4px;
+      color: var(--text-primary); line-height: 1; margin-bottom: 5px;
     }
     .stat-label {
       font-size: .72rem; color: var(--text-label);
@@ -331,17 +334,17 @@
     }
 
     /* ── Progress Bar (BW) ──────────────────────────────────── */
-    .bw-usage-block { margin-bottom: 24px; }
+    .bw-usage-block { margin-bottom: 26px; }
     .bw-header {
       display: flex; justify-content: space-between; align-items: center;
       margin-bottom: 8px;
     }
-    .bw-label { font-weight: 700; color: var(--text-info-label); font-size: .9rem; }
-    .bw-pct   { font-weight: 800; color: #4facfe; font-size: .9rem; }
+    .bw-label { font-weight: 700; color: var(--text-info-label); font-size: .92rem; }
+    .bw-pct   { font-weight: 800; color: #4facfe; font-size: .92rem; }
     .bw-bar-bg {
       height: 10px;
       background: var(--bw-bar-bg);
-      border-radius: 999px; overflow: hidden; margin-bottom: 6px;
+      border-radius: 999px; overflow: hidden; margin-bottom: 8px;
     }
     .bw-bar-fill {
       height: 100%;
@@ -349,15 +352,15 @@
       background: linear-gradient(90deg, #4facfe, #00f2fe);
       transition: width 1.2s cubic-bezier(.4,0,.2,1);
     }
-    .bw-bar-fill.warn  { background: linear-gradient(90deg,#f6d365,#fda085); }
-    .bw-bar-fill.crit  { background: linear-gradient(90deg,#ff6b6b,#ee0979); }
+    .bw-bar-fill.warn { background: linear-gradient(90deg,#f6d365,#fda085); }
+    .bw-bar-fill.crit { background: linear-gradient(90deg,#ff6b6b,#ee0979); }
     .bw-meta {
       display: flex; justify-content: space-between;
       font-size: .78rem; color: var(--text-muted);
     }
 
     /* ── Info Rows ──────────────────────────────────────────── */
-    .info-section { margin-bottom: 24px; }
+    .info-section { margin-bottom: 26px; }
     .info-section-title {
       font-size: .75rem; font-weight: 700;
       text-transform: uppercase; letter-spacing: 1px;
@@ -366,27 +369,28 @@
       display: flex; align-items: center; gap: 8px;
     }
     .info-section-title::after {
-      content: '';
-      flex: 1; height: 1px;
-      background: var(--section-line);
+      content: ''; flex: 1; height: 1px; background: var(--section-line);
     }
     .info-row {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 12px 0;
+      padding: 13px 0;
       border-bottom: 1px solid var(--info-row-border);
+      transition: background .2s ease;
     }
     .info-row:last-child { border-bottom: none; }
     .info-label {
       display: flex; align-items: center; gap: 10px;
-      color: var(--text-info-label); font-size: .88rem; font-weight: 500;
+      color: var(--text-info-label); font-size: .9rem; font-weight: 500;
     }
     .info-label .il-icon {
-      width: 32px; height: 32px;
-      border-radius: 9px;
+      width: 34px; height: 34px;
+      border-radius: 10px;
       display: flex; align-items: center; justify-content: center;
-      font-size: .8rem; flex-shrink: 0;
+      font-size: .82rem; flex-shrink: 0;
+      transition: transform .25s cubic-bezier(.34,1.56,.64,1);
     }
-    .info-value { font-weight: 700; color: var(--text-primary); font-size: .9rem; }
+    .info-row:hover .il-icon { transform: scale(1.1); }
+    .info-value { font-weight: 700; color: var(--text-primary); font-size: .92rem; }
 
     /* ── Badges ─────────────────────────────────────────────── */
     .badge {
@@ -411,7 +415,7 @@
       font-size: .72rem; font-weight: 700;
       color: var(--badge-ok-color);
       background: var(--badge-ok-bg);
-      padding: 3px 10px; border-radius: 999px;
+      padding: 4px 12px; border-radius: 999px;
     }
     .live-dot {
       width: 7px; height: 7px; border-radius: 50%;
@@ -420,7 +424,7 @@
     }
     @keyframes live-pulse {
       0%,100%{ transform:scale(1); opacity:1; }
-      50%    { transform:scale(1.5); opacity:.6; }
+      50%    { transform:scale(1.6); opacity:.6; }
     }
 
     /* ── Latency Meter ──────────────────────────────────────── */
@@ -449,13 +453,15 @@
       display: flex; align-items: center; gap: 16px;
       padding: 18px 22px;
       background: var(--stat-bg);
-      border-radius: 18px;
+      border-radius: 20px;
       border: 1px solid var(--stat-border);
-      margin-bottom: 24px;
+      margin-bottom: 26px;
       flex-wrap: wrap;
+      transition: box-shadow .3s ease;
     }
+    .bot-avatar-row:hover { box-shadow: 0 8px 28px rgba(102,126,234,.14); }
     .bot-avatar {
-      width: 54px; height: 54px;
+      width: 56px; height: 56px;
       border-radius: 50%;
       background: linear-gradient(135deg,#667eea,#764ba2);
       display: flex; align-items: center; justify-content: center;
@@ -469,7 +475,7 @@
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .bot-info-text span {
-      color: var(--text-label); font-size: .82rem;
+      color: var(--text-label); font-size: .84rem;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
       display: block;
     }
@@ -482,43 +488,49 @@
     }
     .btn {
       display: inline-flex; align-items: center; gap: 8px;
-      padding: 12px 26px; border-radius: 50px;
-      font-weight: 700; font-size: .85rem;
+      padding: 12px 28px; border-radius: 50px;
+      font-weight: 700; font-size: .86rem;
       text-decoration: none; border: none; cursor: pointer;
-      transition: all .3s ease; font-family: 'Poppins', sans-serif;
+      transition: all .3s cubic-bezier(.34,1.56,.64,1);
+      font-family: 'Poppins', sans-serif;
     }
     .btn-primary {
       background: linear-gradient(135deg,#667eea,#764ba2);
       color: #fff;
-      box-shadow: 0 8px 24px rgba(102,126,234,.4);
+      box-shadow: 0 8px 24px rgba(102,126,234,.42);
     }
-    .btn-primary:hover { transform:translateY(-3px); box-shadow:0 12px 32px rgba(102,126,234,.55); }
+    .btn-primary:hover { transform:translateY(-4px); box-shadow:0 14px 34px rgba(102,126,234,.56); }
     .btn-tg {
       background: linear-gradient(135deg,#26a4da,#1e89b8);
       color: #fff;
-      box-shadow: 0 8px 24px rgba(38,164,218,.35);
+      box-shadow: 0 8px 24px rgba(38,164,218,.36);
     }
-    .btn-tg:hover { transform:translateY(-3px); box-shadow:0 12px 32px rgba(38,164,218,.45); }
+    .btn-tg:hover { transform:translateY(-4px); box-shadow:0 14px 34px rgba(38,164,218,.48); }
     .btn-refresh {
       background: var(--btn-ghost-bg);
       color: var(--btn-ghost-color);
       border: 1px solid var(--btn-ghost-border);
     }
-    .btn-refresh:hover { background: var(--btn-ghost-hover); color: var(--text-primary); }
+    .btn-refresh:hover { background: var(--btn-ghost-hover); color: var(--text-primary); transform: translateY(-2px); }
 
     /* ── Footer ─────────────────────────────────────────────── */
     .footer-note {
-      margin-top: 26px;
+      margin-top: 28px;
       color: var(--text-muted);
-      font-size: .82rem;
+      font-size: .83rem;
       text-align: center;
     }
-    .footer-note a { color: var(--footer-link); text-decoration: none; font-weight: 700; }
+    .footer-note a { color: var(--footer-link); text-decoration: none; font-weight: 700; transition: color .2s; }
     .footer-note a:hover { color: var(--footer-hover); }
 
     /* ── Spinner ─────────────────────────────────────────────── */
     .spin { animation: rotate 1s linear infinite; }
     @keyframes rotate { to { transform: rotate(360deg); } }
+
+    /* ── Scrollbar ───────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg-base); }
+    ::-webkit-scrollbar-thumb { background: rgba(102,126,234,.28); border-radius: 3px; }
 
     /* ── Responsive ─────────────────────────────────────────── */
     @media (max-width: 600px) {
@@ -532,9 +544,9 @@
   </style>
 </head>
 <body>
-  <!-- Theme Toggle -->
+  <!-- Theme Toggle (left side) -->
   <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle theme">
-    <i class="fa-regular fa-circle-dot"></i>
+    <i class="fa-solid fa-moon" id="theme-icon"></i>
   </button>
 
   <!-- Particles -->
@@ -548,7 +560,7 @@
     <!-- ── Header ─────────────────────────────────────────── -->
     <div class="header">
       <div class="header-icon"><i class="fa-solid fa-robot"></i></div>
-      <h1>⚙️ ʙᴏᴛ ᴄᴏɴᴛʀᴏʟ ᴘᴀɴᴇʟ</h1>
+      <h1>⚙️ Bot Control Panel</h1>
       <p>{{ bot_name }} &nbsp;·&nbsp; @{{ bot_username }}</p>
     </div>
 
@@ -556,15 +568,15 @@
     <div class="tab-nav" role="tablist">
       <button class="tab-btn active" role="tab" onclick="switchTab('stats', this)" id="tab-stats">
         <i class="fa-solid fa-chart-pie"></i>
-        <span>ꜱᴛᴀᴛꜱ</span>
+        <span>Stats</span>
       </button>
       <button class="tab-btn" role="tab" onclick="switchTab('bandwidth', this)" id="tab-bandwidth">
         <i class="fa-solid fa-satellite-dish"></i>
-        <span>ʙᴀɴᴅᴡɪᴅᴛʜ</span>
+        <span>Bandwidth</span>
       </button>
       <button class="tab-btn" role="tab" onclick="switchTab('health', this)" id="tab-health">
         <i class="fa-solid fa-heart-pulse"></i>
-        <span>ʜᴇᴀʟᴛʜ</span>
+        <span>Health</span>
       </button>
     </div>
 
@@ -576,51 +588,49 @@
             <i class="fa-solid fa-chart-column"></i>
           </div>
           <div>
-            <h2>ʙᴏᴛ ꜱᴛᴀᴛɪꜱᴛɪᴄꜱ</h2>
-            <p>ʟɪᴠᴇ ᴅᴀᴛᴀ · ʀᴇꜰʀᴇꜱʜᴇꜱ ᴇᴠᴇʀʏ 30s</p>
+            <h2>Bot Statistics</h2>
+            <p>Live data · refreshes every 30s</p>
           </div>
         </div>
       </div>
       <div class="panel-body">
 
-        <!-- 6-card grid -->
         <div class="stats-grid">
           <div class="stat-card">
             <div class="stat-icon-wrap si-users"><i class="fa-solid fa-users"></i></div>
             <div class="stat-value" id="s-users">{{ total_users }}</div>
-            <div class="stat-label">ᴛᴏᴛᴀʟ ᴜꜱᴇʀꜱ</div>
+            <div class="stat-label">Total Users</div>
           </div>
           <div class="stat-card">
             <div class="stat-icon-wrap si-chats"><i class="fa-solid fa-comments"></i></div>
             <div class="stat-value" id="s-chats">{{ total_chats }}</div>
-            <div class="stat-label">ᴛᴏᴛᴀʟ ᴄʜᴀᴛꜱ</div>
+            <div class="stat-label">Total Chats</div>
           </div>
           <div class="stat-card">
             <div class="stat-icon-wrap si-files"><i class="fa-solid fa-folder-open"></i></div>
             <div class="stat-value" id="s-files">{{ total_files }}</div>
-            <div class="stat-label">ᴛᴏᴛᴀʟ ꜰɪʟᴇꜱ</div>
+            <div class="stat-label">Total Files</div>
           </div>
           <div class="stat-card">
             <div class="stat-icon-wrap si-ram"><i class="fa-solid fa-memory"></i></div>
             <div class="stat-value" id="s-ram">{{ ram_used }}</div>
-            <div class="stat-label">ʀᴀᴍ ᴜꜱᴀɢᴇ</div>
+            <div class="stat-label">RAM Usage</div>
           </div>
           <div class="stat-card">
             <div class="stat-icon-wrap si-cpu"><i class="fa-solid fa-microchip"></i></div>
             <div class="stat-value" id="s-cpu">{{ cpu_pct }}%</div>
-            <div class="stat-label">ᴄᴘᴜ ᴜꜱᴀɢᴇ</div>
+            <div class="stat-label">CPU Usage</div>
           </div>
           <div class="stat-card">
             <div class="stat-icon-wrap si-uptime"><i class="fa-solid fa-clock-rotate-left"></i></div>
             <div class="stat-value" id="s-uptime" style="font-size:1.05rem;">{{ uptime }}</div>
-            <div class="stat-label">ʙᴏᴛ ᴜᴘᴛɪᴍᴇ</div>
+            <div class="stat-label">Bot Uptime</div>
           </div>
         </div>
 
-        <!-- Bandwidth bar inside stats -->
         <div class="bw-usage-block">
           <div class="bw-header">
-            <span class="bw-label"><i class="fa-solid fa-signal" style="margin-right:6px;opacity:.6;"></i>ʙᴀɴᴅᴡɪᴅᴛʜ ᴜꜱᴀɢᴇ</span>
+            <span class="bw-label"><i class="fa-solid fa-signal" style="margin-right:6px;opacity:.6;"></i>Bandwidth Usage</span>
             <span class="bw-pct" id="s-bwpct">{{ bw_pct }}%</span>
           </div>
           <div class="bw-bar-bg">
@@ -628,18 +638,18 @@
                  id="s-bwbar" style="width:{{ bw_pct }}%;"></div>
           </div>
           <div class="bw-meta">
-            <span id="s-bwused">{{ bw_used }} ᴜꜱᴇᴅ</span>
-            <span id="s-bwlimit">{{ bw_limit }} ʟɪᴍɪᴛ</span>
+            <span id="s-bwused">{{ bw_used }} used</span>
+            <span id="s-bwlimit">{{ bw_limit }} limit</span>
           </div>
         </div>
 
         <div class="btn-row">
-          <a href="/" class="btn btn-primary"><i class="fa-solid fa-house"></i> ʜᴏᴍᴇ</a>
+          <a href="/" class="btn btn-primary"><i class="fa-solid fa-house"></i> Home</a>
           <a href="https://t.me/{{ bot_username }}" target="_blank" class="btn btn-tg">
-            <i class="fa-brands fa-telegram"></i> ᴏᴘᴇɴ ʙᴏᴛ
+            <i class="fa-brands fa-telegram"></i> Open Bot
           </a>
           <button class="btn btn-refresh" onclick="refreshStats()">
-            <i class="fa-solid fa-rotate-right" id="stats-refresh-icon"></i> ʀᴇꜰʀᴇꜱʜ
+            <i class="fa-solid fa-rotate-right" id="stats-refresh-icon"></i> Refresh
           </button>
         </div>
       </div>
@@ -653,58 +663,57 @@
             <i class="fa-solid fa-satellite-dish"></i>
           </div>
           <div>
-            <h2>ʙᴀɴᴅᴡɪᴅᴛʜ ɪɴꜰᴏ</h2>
-            <p>ᴅᴀᴛᴀ ᴛʀᴀɴꜱꜰᴇʀ ᴏᴠᴇʀᴠɪᴇᴡ</p>
+            <h2>Bandwidth Info</h2>
+            <p>Data transfer overview</p>
           </div>
         </div>
       </div>
       <div class="panel-body">
 
         <div class="info-section">
-          <div class="info-section-title"><i class="fa-solid fa-circle-info"></i> ᴄᴜʀʀᴇɴᴛ ꜱᴛᴀᴛᴜꜱ</div>
+          <div class="info-section-title"><i class="fa-solid fa-circle-info"></i> Current Status</div>
           <div class="info-row">
             <span class="info-label">
               <span class="il-icon" style="background:rgba(102,126,234,.2)"><i class="fa-solid fa-toggle-on" style="color:#667eea"></i></span>
-              ʙᴡ ᴍᴏᴅᴇ
+              BW Mode
             </span>
             <span class="badge {{ 'badge-ok' if bw_mode else 'badge-error' }}" id="bw-mode-badge">
-              {{ 'ᴀᴄᴛɪᴠᴇ' if bw_mode else 'ɪɴᴀᴄᴛɪᴠᴇ' }}
+              {{ 'Active' if bw_mode else 'Inactive' }}
             </span>
           </div>
           <div class="info-row">
             <span class="info-label">
               <span class="il-icon" style="background:rgba(79,172,254,.2)"><i class="fa-solid fa-gauge-high" style="color:#4facfe"></i></span>
-              ʟɪᴍɪᴛ
+              Limit
             </span>
             <span class="info-value" id="bw-limit">{{ bw_limit }}</span>
           </div>
           <div class="info-row">
             <span class="info-label">
               <span class="il-icon" style="background:rgba(246,211,101,.2)"><i class="fa-solid fa-upload" style="color:#f6d365"></i></span>
-              ᴜꜱᴇᴅ (ᴛᴏᴛᴀʟ)
+              Used (Total)
             </span>
             <span class="info-value" id="bw-used">{{ bw_used }}</span>
           </div>
           <div class="info-row">
             <span class="info-label">
               <span class="il-icon" style="background:rgba(250,112,154,.2)"><i class="fa-solid fa-calendar-day" style="color:#fa709a"></i></span>
-              ᴜꜱᴇᴅ ᴛᴏᴅᴀʏ
+              Used Today
             </span>
             <span class="info-value" id="bw-today">{{ bw_today }}</span>
           </div>
           <div class="info-row">
             <span class="info-label">
               <span class="il-icon" style="background:rgba(67,233,123,.2)"><i class="fa-solid fa-battery-three-quarters" style="color:#43e97b"></i></span>
-              ʀᴇᴍᴀɪɴɪɴɢ
+              Remaining
             </span>
             <span class="info-value" id="bw-remaining">{{ bw_remaining }}</span>
           </div>
         </div>
 
-        <!-- Progress bar -->
         <div class="bw-usage-block">
           <div class="bw-header">
-            <span class="bw-label">ᴜꜱᴀɢᴇ ᴘʀᴏɢʀᴇꜱꜱ</span>
+            <span class="bw-label">Usage Progress</span>
             <span class="bw-pct" id="bw-pct">{{ bw_pct }}%</span>
           </div>
           <div class="bw-bar-bg">
@@ -712,18 +721,18 @@
                  id="bw-bar" style="width:{{ bw_pct }}%;"></div>
           </div>
           <div class="bw-meta">
-            <span id="bw-meta-used">{{ bw_used }} ᴜꜱᴇᴅ</span>
-            <span id="bw-meta-limit">{{ bw_limit }} ᴛᴏᴛᴀʟ</span>
+            <span id="bw-meta-used">{{ bw_used }} used</span>
+            <span id="bw-meta-limit">{{ bw_limit }} total</span>
           </div>
         </div>
 
         <div class="btn-row">
-          <a href="/" class="btn btn-primary"><i class="fa-solid fa-house"></i> ʜᴏᴍᴇ</a>
+          <a href="/" class="btn btn-primary"><i class="fa-solid fa-house"></i> Home</a>
           <a href="https://t.me/{{ bot_username }}" target="_blank" class="btn btn-tg">
-            <i class="fa-brands fa-telegram"></i> ᴏᴘᴇɴ ʙᴏᴛ
+            <i class="fa-brands fa-telegram"></i> Open Bot
           </a>
           <button class="btn btn-refresh" onclick="refreshBandwidth()">
-            <i class="fa-solid fa-rotate-right" id="bw-refresh-icon"></i> ʀᴇꜰʀᴇꜱʜ
+            <i class="fa-solid fa-rotate-right" id="bw-refresh-icon"></i> Refresh
           </button>
         </div>
       </div>
@@ -737,17 +746,16 @@
             <i class="fa-solid fa-heart-pulse"></i>
           </div>
           <div style="flex:1; min-width:0;">
-            <h2>ꜱʏꜱᴛᴇᴍ ʜᴇᴀʟᴛʜ</h2>
-            <p>ʀᴇᴀʟ-ᴛɪᴍᴇ ᴍᴏɴɪᴛᴏʀɪɴɢ</p>
+            <h2>System Health</h2>
+            <p>Real-time monitoring</p>
           </div>
           <div class="live-indicator" style="flex-shrink:0;">
-            <span class="live-dot"></span> ʟɪᴠᴇ
+            <span class="live-dot"></span> Live
           </div>
         </div>
       </div>
       <div class="panel-body">
 
-        <!-- Bot Identity Card -->
         <div class="bot-avatar-row">
           <div class="bot-avatar"><i class="fa-solid fa-robot"></i></div>
           <div class="bot-info-text">
@@ -755,64 +763,62 @@
             <span>@<span id="h-username">{{ bot_username }}</span> · ID: <span id="h-botid">{{ bot_id }}</span></span>
           </div>
           <div class="bot-status-badge">
-            <span class="badge badge-ok" id="h-bot-status-badge">ʀᴜɴɴɪɴɢ</span>
+            <span class="badge badge-ok" id="h-bot-status-badge">Running</span>
           </div>
         </div>
 
-        <!-- Bot Information -->
         <div class="info-section">
-          <div class="info-section-title"><i class="fa-solid fa-robot"></i> ʙᴏᴛ ɪɴꜰᴏʀᴍᴀᴛɪᴏɴ</div>
+          <div class="info-section-title"><i class="fa-solid fa-robot"></i> Bot Information</div>
           <div class="info-row">
             <span class="info-label">
               <span class="il-icon" style="background:rgba(102,126,234,.2)"><i class="fa-solid fa-signature" style="color:#667eea"></i></span>
-              ʙᴏᴛ ɴᴀᴍᴇ
+              Bot Name
             </span>
             <span class="info-value" id="h-name">{{ bot_name }}</span>
           </div>
           <div class="info-row">
             <span class="info-label">
               <span class="il-icon" style="background:rgba(38,164,218,.2)"><i class="fa-solid fa-at" style="color:#26a4da"></i></span>
-              ᴜꜱᴇʀɴᴀᴍᴇ
+              Username
             </span>
             <span class="info-value">@<span id="h-uname">{{ bot_username }}</span></span>
           </div>
           <div class="info-row">
             <span class="info-label">
               <span class="il-icon" style="background:rgba(246,211,101,.2)"><i class="fa-solid fa-id-badge" style="color:#f6d365"></i></span>
-              ʙᴏᴛ ɪᴅ
+              Bot ID
             </span>
             <span class="info-value" id="h-id">{{ bot_id }}</span>
           </div>
           <div class="info-row">
             <span class="info-label">
               <span class="il-icon" style="background:rgba(250,112,154,.2)"><i class="fa-solid fa-server" style="color:#fa709a"></i></span>
-              ᴅᴀᴛᴀᴄᴇɴᴛᴇʀ
+              Datacenter
             </span>
             <span class="info-value" id="h-dc">DC{{ bot_dc }}</span>
           </div>
         </div>
 
-        <!-- Real-time Server Data (flood section removed) -->
         <div class="info-section">
-          <div class="info-section-title"><i class="fa-solid fa-satellite-dish"></i> ʀᴇᴀʟ-ᴛɪᴍᴇ ꜱᴇʀᴠᴇʀ ᴅᴀᴛᴀ</div>
+          <div class="info-section-title"><i class="fa-solid fa-satellite-dish"></i> Real-Time Server Data</div>
           <div class="info-row">
             <span class="info-label">
               <span class="il-icon" style="background:rgba(67,233,123,.2)"><i class="fa-solid fa-circle-check" style="color:#43e97b"></i></span>
-              ꜱᴇʀᴠᴇʀ ꜱᴛᴀᴛᴜꜱ
+              Server Status
             </span>
-            <span class="badge badge-ok" id="h-server">ᴏɴʟɪɴᴇ</span>
+            <span class="badge badge-ok" id="h-server">Online</span>
           </div>
           <div class="info-row">
             <span class="info-label">
               <span class="il-icon" style="background:rgba(38,164,218,.2)"><i class="fa-brands fa-telegram" style="color:#26a4da"></i></span>
-              ʙᴏᴛ ᴀᴘɪ ꜱᴛᴀᴛᴜꜱ
+              Bot API Status
             </span>
-            <span class="badge badge-ok" id="h-api">ᴏᴘᴇʀᴀᴛɪᴏɴᴀʟ</span>
+            <span class="badge badge-ok" id="h-api">Operational</span>
           </div>
           <div class="info-row">
             <span class="info-label">
               <span class="il-icon" style="background:rgba(79,172,254,.2)"><i class="fa-solid fa-gauge" style="color:#4facfe"></i></span>
-              ʀᴇꜱᴘᴏɴꜱᴇ ʟᴀᴛᴇɴᴄʏ
+              Response Latency
             </span>
             <div class="latency-bar-wrap">
               <div class="latency-bar-bg">
@@ -824,19 +830,19 @@
           <div class="info-row">
             <span class="info-label">
               <span class="il-icon" style="background:rgba(250,112,154,.2)"><i class="fa-solid fa-tower-broadcast" style="color:#fa709a"></i></span>
-              ʟɪᴠᴇ ꜱᴛʀᴇᴀᴍɪɴɢ ꜱᴇꜱꜱɪᴏɴꜱ
+              Live Streaming Sessions
             </span>
             <span class="info-value" id="h-conns">{{ active_conns }}</span>
           </div>
         </div>
 
         <div class="btn-row">
-          <a href="/" class="btn btn-primary"><i class="fa-solid fa-house"></i> ʜᴏᴍᴇ</a>
+          <a href="/" class="btn btn-primary"><i class="fa-solid fa-house"></i> Home</a>
           <a href="https://t.me/{{ bot_username }}" target="_blank" class="btn btn-tg">
-            <i class="fa-brands fa-telegram"></i> ᴏᴘᴇɴ ʙᴏᴛ
+            <i class="fa-brands fa-telegram"></i> Open Bot
           </a>
           <button class="btn btn-refresh" onclick="refreshHealth()">
-            <i class="fa-solid fa-rotate-right" id="health-refresh-icon"></i> ʀᴇꜰʀᴇꜱʜ
+            <i class="fa-solid fa-rotate-right" id="health-refresh-icon"></i> Refresh
           </button>
         </div>
       </div>
@@ -844,8 +850,8 @@
 
     <!-- ── Footer ─────────────────────────────────────────── -->
     <div class="footer-note">
-      ᴘᴏᴡᴇʀᴇᴅ ʙʏ <a href="https://t.me/{{ bot_username }}">{{ bot_name }}</a> &nbsp;·&nbsp;
-      ᴄʀᴇᴀᴛᴇᴅ ᴡɪᴛʜ ❤️ ʙʏ <a href="https://t.me/FLiX_LY" target="_blank">@FLiX_LY</a>
+      Powered by <a href="https://t.me/{{ bot_username }}">{{ bot_name }}</a> &nbsp;·&nbsp;
+      Created with ❤️ by <a href="https://t.me/FLiX_LY" target="_blank">@FLiX_LY</a>
     </div>
   </div><!-- /container -->
 
@@ -854,7 +860,14 @@
   (function() {
     const saved = localStorage.getItem('flix-theme') || 'dark';
     document.documentElement.setAttribute('data-theme', saved);
+    updateIcon(saved);
   })();
+
+  function updateIcon(theme) {
+    const icon = document.getElementById('theme-icon');
+    if (!icon) return;
+    icon.className = theme === 'dark' ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+  }
 
   function toggleTheme() {
     const html = document.documentElement;
@@ -862,6 +875,10 @@
     const next = current === 'dark' ? 'light' : 'dark';
     html.setAttribute('data-theme', next);
     localStorage.setItem('flix-theme', next);
+    updateIcon(next);
+    const btn = document.querySelector('.theme-toggle');
+    btn.style.transform = 'scale(1.2) rotate(360deg)';
+    setTimeout(() => { btn.style.transform = ''; }, 400);
   }
 
   // ── Tab switching ──────────────────────────────────────────
@@ -896,8 +913,8 @@
       document.getElementById('s-uptime').textContent = d.uptime       ?? '—';
       const pct = d.bw_pct ?? 0;
       document.getElementById('s-bwpct').textContent  = pct + '%';
-      document.getElementById('s-bwused').textContent = (d.bw_used ?? '—') + ' ᴜꜱᴇᴅ';
-      document.getElementById('s-bwlimit').textContent= (d.bw_limit ?? '—') + ' ʟɪᴍɪᴛ';
+      document.getElementById('s-bwused').textContent = (d.bw_used ?? '—') + ' used';
+      document.getElementById('s-bwlimit').textContent= (d.bw_limit ?? '—') + ' limit';
       const bar = document.getElementById('s-bwbar');
       bar.style.width = pct + '%';
       bar.className = 'bw-bar-fill' + (pct > 90 ? ' crit' : pct > 70 ? ' warn' : '');
@@ -919,15 +936,15 @@
       document.getElementById('bw-remaining').textContent  = f.remaining   ?? '—';
       const pct = d.percentage ?? 0;
       document.getElementById('bw-pct').textContent        = pct + '%';
-      document.getElementById('bw-meta-used').textContent  = (f.total_bandwidth ?? '—') + ' ᴜꜱᴇᴅ';
-      document.getElementById('bw-meta-limit').textContent = (f.limit ?? '—') + ' ᴛᴏᴛᴀʟ';
+      document.getElementById('bw-meta-used').textContent  = (f.total_bandwidth ?? '—') + ' used';
+      document.getElementById('bw-meta-limit').textContent = (f.limit ?? '—') + ' total';
       const bar = document.getElementById('bw-bar');
       bar.style.width = pct + '%';
       bar.className = 'bw-bar-fill' + (pct > 90 ? ' crit' : pct > 70 ? ' warn' : '');
       const mode = document.getElementById('bw-mode-badge');
       if (mode) {
         mode.className = 'badge ' + (d.bandwidth_mode ? 'badge-ok' : 'badge-error');
-        mode.textContent = d.bandwidth_mode ? 'ᴀᴄᴛɪᴠᴇ' : 'ɪɴᴀᴄᴛɪᴠᴇ';
+        mode.textContent = d.bandwidth_mode ? 'Active' : 'Inactive';
       }
     } catch(e) { console.warn('bw refresh failed:', e); }
     stopSpin(ico);
@@ -952,7 +969,6 @@
       if (!r.ok) throw new Error(r.statusText);
       const d = await r.json();
 
-      // Bot info
       document.getElementById('h-botname').textContent  = d.bot_name     ?? '—';
       document.getElementById('h-username').textContent = d.bot_username  ?? '—';
       document.getElementById('h-uname').textContent    = d.bot_username  ?? '—';
@@ -961,31 +977,27 @@
       document.getElementById('h-dc').textContent       = 'DC' + (d.bot_dc ?? '?');
       document.getElementById('h-name').textContent     = d.bot_name      ?? '—';
 
-      // Active connections — real data from API
       const connEl = document.getElementById('h-conns');
       if (connEl) connEl.textContent = (d.active_conns != null ? d.active_conns : '0');
 
-      // Server status
-      setBadge('h-server', 'badge-ok', 'ᴏɴʟɪɴᴇ');
-      setBadge('h-api',    'badge-ok', 'ᴏᴘᴇʀᴀᴛɪᴏɴᴀʟ');
+      setBadge('h-server', 'badge-ok', 'Online');
+      setBadge('h-api',    'badge-ok', 'Operational');
 
-      // Bot status
       const botOk = d.bot_status === 'running';
       setBadge('h-bot-status-badge',
                botOk ? 'badge-ok' : 'badge-init',
-               botOk ? 'ʀᴜɴɴɪɴɢ' : 'ɪɴɪᴛɪᴀʟɪᴢɪɴɢ');
+               botOk ? 'Running' : 'Initializing');
 
-      // Latency
       const latEl = document.getElementById('h-latency');
       const barEl = document.getElementById('h-latency-bar');
-      latEl.textContent = latency + ' ᴍꜱ';
+      latEl.textContent = latency + ' ms';
       latEl.className   = 'latency-val' + (latency > 500 ? ' crit' : latency > 200 ? ' warn' : '');
       const pct = Math.min(100, (latency / 1000) * 100);
       barEl.style.width = pct + '%';
 
     } catch(e) {
-      setBadge('h-server', 'badge-error', 'ᴏꜰꜰʟɪɴᴇ');
-      setBadge('h-api',    'badge-error', 'ᴅᴏᴡɴ');
+      setBadge('h-server', 'badge-error', 'Offline');
+      setBadge('h-api',    'badge-error', 'Down');
       console.warn('health refresh failed:', e);
     }
     stopSpin(ico);
@@ -997,7 +1009,7 @@
     _healthTimer = setInterval(refreshHealth, 5000);
   }
 
-  // ── Auto-refresh stats & bw every 30s ─────────────────────
+  // ── Auto-refresh every 30s ─────────────────────────────────
   refreshStats();
   setInterval(refreshStats,     30000);
   setInterval(refreshBandwidth, 30000);

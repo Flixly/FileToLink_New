@@ -18,12 +18,25 @@ logger = logging.getLogger(__name__)
 # Telegram hard-caps upload.GetFile at 1 MB per call.
 CHUNK_SIZE = 1024 * 1024  # 1 MB
 
+# Number of consecutive range-request packets that indicate an active streaming
+# session (e.g. a media player probing then playing). When a connection sends
+# this many or more ranged requests we switch to a keep-streaming path that
+# avoids re-resolving file metadata on each call.
+STREAMING_PACKET_THRESHOLD = 2
+
 MIME_TYPE_MAP = {
     "video":    "video/mp4",
     "audio":    "audio/mpeg",
     "image":    "image/jpeg",
     "document": "application/octet-stream",
 }
+
+# Per-file packet counters used to detect an active streaming session.
+# Key: file_hash  →  Value: number of range-requests served so far.
+_packet_counters: Dict[str, int] = {}
+# Cached file metadata keyed by file_hash to avoid repeated DB lookups during
+# a streaming session (cleared whenever the ByteStreamer cache is cleared).
+_file_meta_cache: Dict[str, dict] = {}
 
 
 async def get_file_ids(client: Client, message_id: str) -> FileId:
@@ -248,7 +261,9 @@ class ByteStreamer:
         while True:
             await asyncio.sleep(self.clean_timer)
             self.cached_file_ids.clear()
-            logger.debug("ByteStreamer cache cleared")
+            _file_meta_cache.clear()
+            _packet_counters.clear()
+            logger.debug("ByteStreamer cache + streaming-session counters cleared")
 
 
 def _parse_range(range_header: str, file_size: int):
@@ -284,11 +299,39 @@ class StreamingService:
         is_download: bool = False,
     ) -> web.StreamResponse:
 
-        file_data = await self.db.get_file_by_hash(file_hash)
-        if not file_data:
-            raise web.HTTPNotFound(reason="file not found")
+        # ── Streaming-session fast-path ───────────────────────────────────────
+        # Count incoming range-requests per file_hash.  Once the counter reaches
+        # STREAMING_PACKET_THRESHOLD we treat the connection as an active media
+        # player and skip repeated DB / bandwidth-check overhead on every packet.
+        range_header = request.headers.get("Range", "")
+        is_range_request = bool(range_header)
 
-        if Config.get("bandwidth_mode", True):
+        if is_range_request:
+            _packet_counters[file_hash] = _packet_counters.get(file_hash, 0) + 1
+        else:
+            # Non-ranged request resets the counter (fresh load)
+            _packet_counters[file_hash] = 0
+
+        is_streaming_session = (
+            is_range_request
+            and _packet_counters.get(file_hash, 0) >= STREAMING_PACKET_THRESHOLD
+        )
+
+        # ── File metadata ─────────────────────────────────────────────────────
+        # Use in-memory cache after the first lookup so subsequent packets in the
+        # same streaming session don't hit the database on every chunk request.
+        if file_hash in _file_meta_cache:
+            file_data = _file_meta_cache[file_hash]
+        else:
+            file_data = await self.db.get_file_by_hash(file_hash)
+            if not file_data:
+                raise web.HTTPNotFound(reason="file not found")
+            _file_meta_cache[file_hash] = file_data
+
+        # ── Bandwidth guard ───────────────────────────────────────────────────
+        # Only run the bandwidth check for the very first packet (or non-ranged
+        # requests) to avoid DB reads on every 1 MB chunk during playback.
+        if not is_streaming_session and Config.get("bandwidth_mode", True):
             stats  = await self.db.get_bandwidth_stats()
             max_bw = Config.get("max_bandwidth", 107374182400)
             if max_bw and stats["total_bandwidth"] >= max_bw:
@@ -305,7 +348,6 @@ class StreamingService:
             logger.error("get_file_properties failed: msg=%s err=%s", message_id, exc)
             raise web.HTTPNotFound(reason="could not resolve file on Telegram")
 
-        range_header            = request.headers.get("Range", "")
         from_bytes, until_bytes = _parse_range(range_header, file_size)
 
         if from_bytes > until_bytes or from_bytes >= file_size:
@@ -324,8 +366,9 @@ class StreamingService:
         part_count     = math.ceil((until_bytes + 1) / CHUNK_SIZE) - (offset // CHUNK_SIZE)
 
         logger.debug(
-            "stream  msg=%s  size=%d  range=%d-%d  offset=%d  parts=%d",
+            "stream  msg=%s  size=%d  range=%d-%d  offset=%d  parts=%d  session=%s",
             message_id, file_size, from_bytes, until_bytes, offset, part_count,
+            "streaming" if is_streaming_session else "initial",
         )
 
         mime = (
@@ -339,8 +382,7 @@ class StreamingService:
         disposition = "attachment" if is_download else "inline"
 
         # Use 206 only when a Range was requested; 200 otherwise
-        is_range_request = bool(range_header)
-        status           = 206 if is_range_request else 200
+        status = 206 if is_range_request else 200
 
         headers = {
             "Content-Type":                mime,
