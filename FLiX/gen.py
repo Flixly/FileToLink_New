@@ -844,16 +844,34 @@ async def inline_query_handler(client: Client, inline_query):
     ])
     markup = InlineKeyboardMarkup(btn_rows)
 
-    # High-quality 3D thumbnail icons for each file type in Telegram inline results.
-    # Sourced from Microsoft's Fluent Emoji 3D set — 512px renders for crisp display.
-    THUMBS = {
-        "video":    "https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Clapper%20board/3D/clapper_board_3d.png",
-        "audio":    "https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Headphone/3D/headphone_3d.png",
-        "image":    "https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Framed%20picture/3D/framed_picture_3d.png",
-        "document": "https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Page%20facing%20up/3D/page_facing_up_3d.png",
+    # ── Thumbnail icons for inline results ───────────────────────────────────
+    # Strategy: prefer self-hosted SVG icons served from our own web server
+    # (zero external dependency, instant load, permanent availability).
+    # The icons are served at /icons/<name> by app.py.
+    # Fallback: jsDelivr CDN (GitHub-backed, globally cached, no rate-limits).
+    #
+    # Telegram requires thumb_url to be a valid HTTPS image URL.
+    # SVG is well supported as an inline thumbnail.
+    _ICON_SLUG = {
+        "video":    "media",
+        "audio":    "audio",
+        "image":    "photo",
+        "document": "document",
     }
-    DEFAULT_THUMB = "https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Open%20file%20folder/3D/open_file_folder_3d.png"
-    thumb_url = THUMBS.get(file_type, DEFAULT_THUMB)
+    _CDN_THUMBS = {
+        "video":    "https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Clapper%20board/3D/clapper_board_3d.png",
+        "audio":    "https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Headphone/3D/headphone_3d.png",
+        "image":    "https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Framed%20picture/3D/framed_picture_3d.png",
+        "document": "https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Page%20facing%20up/3D/page_facing_up_3d.png",
+    }
+    _CDN_DEFAULT = "https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Open%20file%20folder/3D/open_file_folder_3d.png"
+
+    icon_slug = _ICON_SLUG.get(file_type, "document")
+    # Primary: self-hosted SVG from our server (fastest — same origin, CDN-cached by browser)
+    self_hosted_thumb = f"{base_url}/icons/{icon_slug}"
+    # Fallback: jsDelivr (globally distributed, no auth, free)
+    cdn_thumb  = _CDN_THUMBS.get(file_type, _CDN_DEFAULT)
+    thumb_url  = self_hosted_thumb
 
     display_name = file_data["file_name"]
     if len(display_name) > 48:

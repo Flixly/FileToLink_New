@@ -13,15 +13,19 @@ from bot import Bot
 from config import Config
 from database import Database
 from helper import StreamingService, check_bandwidth_limit, format_size
+from helper.stream import (
+    get_active_session_count,
+    _register_session,
+    _unregister_session,
+    _get_client_ip,
+)
 
 logger = logging.getLogger(__name__)
 
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 
-# Tracks live streaming / download sessions in real-time.
-# Incremented when a stream or download begins sending bytes;
-# decremented the moment the response is fully written (or errors).
-_active_connections = 0
+# Active connection count is now managed by stream.py's dedup session tracker.
+# _active_connections kept for backward-compat references only — read via get_active_session_count().
 
 
 def _bot_info(bot: Bot) -> dict:
@@ -91,13 +95,21 @@ def build_app(bot: Bot, database) -> web.Application:
         }
 
     async def _tracked_stream(request: web.Request, file_hash: str, is_download: bool):
-        """Wrap stream_file so _active_connections accurately counts live sessions."""
-        global _active_connections
-        _active_connections += 1
+        """
+        Wrap stream_file with accurate unique-session tracking.
+        
+        A session key is (file_hash, client_ip).  Multiple range-requests from
+        the same IP playing the same file count as ONE session, eliminating the
+        inflated viewer count that occurred when a single player issued 3-5
+        probe/prefetch requests before starting playback.
+        """
+        client_ip   = _get_client_ip(request)
+        session_key = f"{file_hash}:{client_ip}"
+        await _register_session(session_key)
         try:
             return await streaming_service.stream_file(request, file_hash, is_download=is_download)
         finally:
-            _active_connections = max(0, _active_connections - 1)
+            await _unregister_session(session_key)
 
     async def stream_page(request: web.Request):
         file_hash = request.match_info["file_hash"]
@@ -185,7 +197,7 @@ def build_app(bot: Bot, database) -> web.Application:
             "bw_remaining": format_size(remaining),
             "bw_pct":       bw_pct,
             "bot_status":   "running" if getattr(bot, "me", None) else "initializing",
-            "active_conns": _active_connections,
+            "active_conns": get_active_session_count(),
         }
 
     def _format_uptime(seconds: float) -> str:
@@ -281,7 +293,7 @@ def build_app(bot: Bot, database) -> web.Application:
                 "bot_username":            info["bot_username"],
                 "bot_id":                  info["bot_id"],
                 "bot_dc":                  info["bot_dc"],
-                "active_conns":            _active_connections,
+                "active_conns":            get_active_session_count(),
                 "active_conns_description": "Live streaming/download sessions currently transferring bytes",
             }
             return web.Response(text=json.dumps(payload), content_type="application/json")
@@ -304,6 +316,59 @@ def build_app(bot: Bot, database) -> web.Application:
             return await api_health(request)
         raise web.HTTPFound("/bot_settings")
 
+    # ── Inline-query thumbnail icons served locally ───────────
+    # These tiny SVG icons are served directly from our web server so
+    # Telegram inline results can always load a thumbnail with minimal
+    # latency and zero dependency on external CDNs.
+    _ICON_SVGS = {
+        "media": (
+            b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+            b'<rect width="100" height="100" rx="18" fill="#667eea"/>'
+            b'<polygon points="38,28 38,72 72,50" fill="white"/>'
+            b'</svg>'
+        ),
+        "audio": (
+            b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+            b'<rect width="100" height="100" rx="18" fill="#764ba2"/>'
+            b'<circle cx="50" cy="50" r="20" fill="none" stroke="white" stroke-width="5"/>'
+            b'<circle cx="50" cy="50" r="6" fill="white"/>'
+            b'<line x1="50" y1="30" x2="50" y2="15" stroke="white" stroke-width="5" stroke-linecap="round"/>'
+            b'<line x1="50" y1="30" x2="63" y2="22" stroke="white" stroke-width="3.5" stroke-linecap="round"/>'
+            b'</svg>'
+        ),
+        "photo": (
+            b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+            b'<rect width="100" height="100" rx="18" fill="#06b6d4"/>'
+            b'<rect x="18" y="28" width="64" height="44" rx="6" fill="none" stroke="white" stroke-width="4"/>'
+            b'<circle cx="50" cy="50" r="12" fill="white"/>'
+            b'<circle cx="73" cy="34" r="5" fill="white"/>'
+            b'</svg>'
+        ),
+        "document": (
+            b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+            b'<rect width="100" height="100" rx="18" fill="#10b981"/>'
+            b'<rect x="26" y="18" width="48" height="64" rx="6" fill="white"/>'
+            b'<line x1="35" y1="36" x2="65" y2="36" stroke="#10b981" stroke-width="4" stroke-linecap="round"/>'
+            b'<line x1="35" y1="48" x2="65" y2="48" stroke="#10b981" stroke-width="4" stroke-linecap="round"/>'
+            b'<line x1="35" y1="60" x2="52" y2="60" stroke="#10b981" stroke-width="4" stroke-linecap="round"/>'
+            b'</svg>'
+        ),
+    }
+
+    async def serve_icon(request: web.Request):
+        name = request.match_info["name"]
+        svg  = _ICON_SVGS.get(name)
+        if svg is None:
+            raise web.HTTPNotFound()
+        return web.Response(
+            body=svg,
+            content_type="image/svg+xml",
+            headers={
+                "Cache-Control": "public, max-age=86400",
+                "Access-Control-Allow-Origin": "*",
+            },
+        )
+
     app.router.add_get("/",                   home)
     app.router.add_get("/stream/{file_hash}", stream_page)
     app.router.add_get("/dl/{file_hash}",     download_file)
@@ -314,5 +379,6 @@ def build_app(bot: Bot, database) -> web.Application:
     app.router.add_get("/stats",              stats_endpoint)
     app.router.add_get("/bandwidth",          bandwidth_endpoint)
     app.router.add_get("/health",             health_endpoint)
+    app.router.add_get("/icons/{name}",       serve_icon)
 
     return app
