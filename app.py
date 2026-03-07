@@ -317,40 +317,104 @@ def build_app(bot: Bot, database) -> web.Application:
         raise web.HTTPFound("/bot_settings")
 
     # ── Inline-query thumbnail icons served locally ───────────
-    # These tiny SVG icons are served directly from our web server so
+    # These SVG icons are served directly from our web server so
     # Telegram inline results can always load a thumbnail with minimal
     # latency and zero dependency on external CDNs.
+    # Designed to be clean, modern, and visually attractive.
     _ICON_SVGS = {
+        # 🎬 Video icon — gradient purple/blue with play button + film strips
         "media": (
             b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
-            b'<rect width="100" height="100" rx="18" fill="#667eea"/>'
-            b'<polygon points="38,28 38,72 72,50" fill="white"/>'
+            b'<defs>'
+            b'<linearGradient id="vg" x1="0" y1="0" x2="1" y2="1">'
+            b'<stop offset="0%" stop-color="#667eea"/>'
+            b'<stop offset="100%" stop-color="#764ba2"/>'
+            b'</linearGradient>'
+            b'<filter id="vs"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-opacity="0.35"/></filter>'
+            b'</defs>'
+            b'<rect width="100" height="100" rx="22" fill="url(#vg)"/>'
+            b'<rect x="14" y="22" width="72" height="56" rx="10" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>'
+            b'<polygon points="40,32 40,68 70,50" fill="white" filter="url(#vs)"/>'
+            b'<rect x="14" y="22" width="72" height="10" rx="5" fill="rgba(0,0,0,0.2)"/>'
+            b'<rect x="14" y="68" width="72" height="10" rx="5" fill="rgba(0,0,0,0.2)"/>'
+            b'<rect x="22" y="22" width="6" height="10" rx="2" fill="rgba(255,255,255,0.5)"/>'
+            b'<rect x="36" y="22" width="6" height="10" rx="2" fill="rgba(255,255,255,0.5)"/>'
+            b'<rect x="58" y="22" width="6" height="10" rx="2" fill="rgba(255,255,255,0.5)"/>'
+            b'<rect x="72" y="22" width="6" height="10" rx="2" fill="rgba(255,255,255,0.5)"/>'
+            b'<rect x="22" y="68" width="6" height="10" rx="2" fill="rgba(255,255,255,0.5)"/>'
+            b'<rect x="36" y="68" width="6" height="10" rx="2" fill="rgba(255,255,255,0.5)"/>'
+            b'<rect x="58" y="68" width="6" height="10" rx="2" fill="rgba(255,255,255,0.5)"/>'
+            b'<rect x="72" y="68" width="6" height="10" rx="2" fill="rgba(255,255,255,0.5)"/>'
             b'</svg>'
         ),
+        # 🎵 Audio icon — gradient purple with headphone design
         "audio": (
             b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
-            b'<rect width="100" height="100" rx="18" fill="#764ba2"/>'
-            b'<circle cx="50" cy="50" r="20" fill="none" stroke="white" stroke-width="5"/>'
-            b'<circle cx="50" cy="50" r="6" fill="white"/>'
-            b'<line x1="50" y1="30" x2="50" y2="15" stroke="white" stroke-width="5" stroke-linecap="round"/>'
-            b'<line x1="50" y1="30" x2="63" y2="22" stroke="white" stroke-width="3.5" stroke-linecap="round"/>'
+            b'<defs>'
+            b'<linearGradient id="ag" x1="0" y1="0" x2="1" y2="1">'
+            b'<stop offset="0%" stop-color="#a855f7"/>'
+            b'<stop offset="100%" stop-color="#6366f1"/>'
+            b'</linearGradient>'
+            b'<filter id="as"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-opacity="0.3"/></filter>'
+            b'</defs>'
+            b'<rect width="100" height="100" rx="22" fill="url(#ag)"/>'
+            b'<path d="M28,50 C28,35 36,22 50,22 C64,22 72,35 72,50" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" filter="url(#as)"/>'
+            b'<rect x="20" y="48" width="14" height="20" rx="7" fill="white"/>'
+            b'<rect x="66" y="48" width="14" height="20" rx="7" fill="white"/>'
+            b'<circle cx="50" cy="58" r="10" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.4)" stroke-width="2"/>'
+            b'<circle cx="50" cy="58" r="4" fill="white"/>'
             b'</svg>'
         ),
+        # 🖼️ Photo icon — gradient cyan/teal with camera frame
         "photo": (
             b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
-            b'<rect width="100" height="100" rx="18" fill="#06b6d4"/>'
-            b'<rect x="18" y="28" width="64" height="44" rx="6" fill="none" stroke="white" stroke-width="4"/>'
-            b'<circle cx="50" cy="50" r="12" fill="white"/>'
-            b'<circle cx="73" cy="34" r="5" fill="white"/>'
+            b'<defs>'
+            b'<linearGradient id="pg" x1="0" y1="0" x2="1" y2="1">'
+            b'<stop offset="0%" stop-color="#06b6d4"/>'
+            b'<stop offset="100%" stop-color="#0ea5e9"/>'
+            b'</linearGradient>'
+            b'<filter id="ps"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-opacity="0.3"/></filter>'
+            b'</defs>'
+            b'<rect width="100" height="100" rx="22" fill="url(#pg)"/>'
+            b'<rect x="14" y="28" width="72" height="52" rx="10" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.35)" stroke-width="2"/>'
+            b'<path d="M36,28 L42,18 L58,18 L64,28" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.35)" stroke-width="2" stroke-linejoin="round"/>'
+            b'<circle cx="50" cy="54" r="14" fill="rgba(255,255,255,0.0)" stroke="white" stroke-width="3" filter="url(#ps)"/>'
+            b'<circle cx="50" cy="54" r="8" fill="white"/>'
+            b'<circle cx="72" cy="38" r="4" fill="white" opacity="0.7"/>'
             b'</svg>'
         ),
+        # 📄 Document icon — gradient green with lined page
         "document": (
             b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
-            b'<rect width="100" height="100" rx="18" fill="#10b981"/>'
-            b'<rect x="26" y="18" width="48" height="64" rx="6" fill="white"/>'
-            b'<line x1="35" y1="36" x2="65" y2="36" stroke="#10b981" stroke-width="4" stroke-linecap="round"/>'
-            b'<line x1="35" y1="48" x2="65" y2="48" stroke="#10b981" stroke-width="4" stroke-linecap="round"/>'
-            b'<line x1="35" y1="60" x2="52" y2="60" stroke="#10b981" stroke-width="4" stroke-linecap="round"/>'
+            b'<defs>'
+            b'<linearGradient id="dg" x1="0" y1="0" x2="1" y2="1">'
+            b'<stop offset="0%" stop-color="#10b981"/>'
+            b'<stop offset="100%" stop-color="#059669"/>'
+            b'</linearGradient>'
+            b'<filter id="ds"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-opacity="0.3"/></filter>'
+            b'</defs>'
+            b'<rect width="100" height="100" rx="22" fill="url(#dg)"/>'
+            b'<g filter="url(#ds)">'
+            b'<path d="M26,16 L62,16 L76,30 L76,84 L26,84 Z" fill="white" rx="4"/>'
+            b'<path d="M62,16 L62,30 L76,30 Z" fill="rgba(16,185,129,0.3)"/>'
+            b'</g>'
+            b'<line x1="36" y1="44" x2="66" y2="44" stroke="#10b981" stroke-width="4" stroke-linecap="round"/>'
+            b'<line x1="36" y1="54" x2="66" y2="54" stroke="#10b981" stroke-width="4" stroke-linecap="round"/>'
+            b'<line x1="36" y1="64" x2="54" y2="64" stroke="#10b981" stroke-width="4" stroke-linecap="round"/>'
+            b'</svg>'
+        ),
+        # 📁 Default / folder icon — gradient orange/amber
+        "folder": (
+            b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+            b'<defs>'
+            b'<linearGradient id="fg" x1="0" y1="0" x2="1" y2="1">'
+            b'<stop offset="0%" stop-color="#f59e0b"/>'
+            b'<stop offset="100%" stop-color="#d97706"/>'
+            b'</linearGradient>'
+            b'</defs>'
+            b'<rect width="100" height="100" rx="22" fill="url(#fg)"/>'
+            b'<path d="M16,38 L16,72 Q16,78 22,78 L78,78 Q84,78 84,72 L84,42 Q84,36 78,36 L50,36 L44,26 L22,26 Q16,26 16,32 Z" fill="white"/>'
+            b'<path d="M16,38 L84,38 L84,72 Q84,78 78,78 L22,78 Q16,78 16,72 Z" fill="rgba(255,255,255,0.85)"/>'
             b'</svg>'
         ),
     }

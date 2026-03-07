@@ -845,33 +845,39 @@ async def inline_query_handler(client: Client, inline_query):
     markup = InlineKeyboardMarkup(btn_rows)
 
     # ── Thumbnail icons for inline results ───────────────────────────────────
-    # Strategy: prefer self-hosted SVG icons served from our own web server
-    # (zero external dependency, instant load, permanent availability).
-    # The icons are served at /icons/<name> by app.py.
-    # Fallback: jsDelivr CDN (GitHub-backed, globally cached, no rate-limits).
+    # High-quality 3D emoji icons from Microsoft's Fluent UI Emoji set,
+    # served via jsDelivr CDN (GitHub-backed, globally cached, zero rate-limits).
+    # These are beautiful 3D rendered PNG icons — modern, clean, and eye-catching.
+    # Raw GitHub URLs are used as the primary source for maximum compatibility
+    # with Telegram's inline thumbnail loader.
     #
-    # Telegram requires thumb_url to be a valid HTTPS image URL.
-    # SVG is well supported as an inline thumbnail.
+    # Telegram requires thumb_url to be a valid HTTPS image URL (PNG preferred).
+    _CDN_THUMBS = {
+        # 🎬 Video — Clapper Board 3D (film/movie aesthetic)
+        "video":    "https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Clapper%20board/3D/clapper_board_3d.png",
+        # 🎵 Audio — Headphone 3D (music/audio aesthetic)
+        "audio":    "https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Headphone/3D/headphone_3d.png",
+        # 🖼️ Image — Framed Picture 3D (photo/image aesthetic)
+        "image":    "https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Framed%20picture/3D/framed_picture_3d.png",
+        # 📄 Document — Page Facing Up 3D (document aesthetic)
+        "document": "https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Page%20facing%20up/3D/page_facing_up_3d.png",
+    }
+    # 📁 Default — Open File Folder 3D (generic file aesthetic)
+    _CDN_DEFAULT = "https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Open%20file%20folder/3D/open_file_folder_3d.png"
+
+    # Self-hosted SVG as primary (instant load, no CDN latency)
     _ICON_SLUG = {
         "video":    "media",
         "audio":    "audio",
         "image":    "photo",
         "document": "document",
     }
-    _CDN_THUMBS = {
-        "video":    "https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Clapper%20board/3D/clapper_board_3d.png",
-        "audio":    "https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Headphone/3D/headphone_3d.png",
-        "image":    "https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Framed%20picture/3D/framed_picture_3d.png",
-        "document": "https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Page%20facing%20up/3D/page_facing_up_3d.png",
-    }
-    _CDN_DEFAULT = "https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Open%20file%20folder/3D/open_file_folder_3d.png"
-
-    icon_slug = _ICON_SLUG.get(file_type, "document")
-    # Primary: self-hosted SVG from our server (fastest — same origin, CDN-cached by browser)
+    icon_slug         = _ICON_SLUG.get(file_type, "document")
     self_hosted_thumb = f"{base_url}/icons/{icon_slug}"
-    # Fallback: jsDelivr (globally distributed, no auth, free)
-    cdn_thumb  = _CDN_THUMBS.get(file_type, _CDN_DEFAULT)
-    thumb_url  = self_hosted_thumb
+    # Use GitHub raw CDN for attractive 3D PNG icons (fallback-ready)
+    cdn_thumb         = _CDN_THUMBS.get(file_type, _CDN_DEFAULT)
+    # Prefer GitHub raw CDN for Telegram (PNG loads reliably in inline results)
+    thumb_url         = cdn_thumb
 
     display_name = file_data["file_name"]
     if len(display_name) > 48:
