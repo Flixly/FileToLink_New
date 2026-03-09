@@ -833,13 +833,13 @@ async def inline_query_handler(client: Client, inline_query):
     markup = InlineKeyboardMarkup(btn_rows)
 
     _CDN_THUMBS = {
-        "video":    "https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Clapper%20board/3D/clapper_board_3d.png",
-        "audio":    "https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Headphone/3D/headphone_3d.png",
-        "image":    "https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Framed%20picture/3D/framed_picture_3d.png",
-        "document": "https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Page%20facing%20up/3D/page_facing_up_3d.png",
+        "video":    "https://cdn.jsdelivr.net/gh/Flixjod/Batbin@main/Icons/IMG_Vid.PNG",
+        "audio":    "https://cdn.jsdelivr.net/gh/Flixjod/Batbin@main/Icons/IMG_Aud.PNG",
+        "image":    "https://cdn.jsdelivr.net/gh/Flixjod/Batbin@main/Icons/IMG_Photo.PNG",
+        "document": "https://cdn.jsdelivr.net/gh/Flixjod/Batbin@main/Icons/IMG_Doc.PNG",
     }
-    _CDN_DEFAULT = "https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Open%20file%20folder/3D/open_file_folder_3d.png"
-    thumb_url = _CDN_THUMBS.get(file_type, _CDN_DEFAULT)
+
+    thumb_url = _CDN_THUMBS.get(file_type, _CDN_THUMBS["document"])
 
     display_name = file_data["file_name"]
     if len(display_name) > 48:
