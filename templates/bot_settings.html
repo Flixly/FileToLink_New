@@ -1014,6 +1014,9 @@
   refreshStats();
   setInterval(refreshStats,     30000);
   setInterval(refreshBandwidth, 30000);
+  // Always start health monitoring at page load so Live Streaming
+  // Sessions is updated even before the Health tab is opened.
+  startHealthUpdates();
   </script>
 </body>
 </html>

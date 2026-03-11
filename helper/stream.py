@@ -19,6 +19,13 @@ logger = logging.getLogger(__name__)
 # Telegram hard-caps upload.GetFile at 1 MB per request.
 CHUNK_SIZE = 1024 * 1024
 
+# For the very first chunk of a fresh stream (offset=0) we only need a tiny
+# slice of data to unblock the browser and let it start rendering.  After that
+# the normal 1 MB chunk size is used.  Setting this too small wastes RTTs;
+# setting it too large delays first-byte.  128 KB is a good sweet-spot that
+# satisfies HTTP range-sniff probes AND lets browsers start decoding quickly.
+FIRST_CHUNK_SIZE = 128 * 1024   # 128 KB for lowest TTFB on the initial request
+
 # Keep this many chunks pre-fetched ahead of the writer.
 # Higher values smooth playback on fast connections at the cost of a little
 # extra memory per stream.
@@ -111,9 +118,20 @@ def is_browser_playable(mime: str) -> bool:
 
 
 async def get_file_ids(client: Client, message_id: str) -> FileId:
-    msg = await client.get_messages(Config.FLOG_CHAT_ID, int(message_id))
+    """Fetch the FileId for *message_id* from the Flog/dump channel.
+
+    Raises ``web.HTTPNotFound`` (instead of a plain ValueError) when the
+    message cannot be found or contains no streamable media, so callers can
+    surface a clean 404 to the browser rather than a 500.
+    """
+    try:
+        msg = await client.get_messages(Config.FLOG_CHAT_ID, int(message_id))
+    except Exception as exc:
+        logger.warning("get_messages failed: msg=%s err=%s", message_id, exc)
+        raise web.HTTPNotFound(reason=f"could not fetch message {message_id} from log channel")
+
     if not msg or msg.empty:
-        raise ValueError(f"message {message_id} not found in dump chat")
+        raise web.HTTPNotFound(reason=f"message {message_id} not found in log channel")
 
     media = (
         msg.document
@@ -126,7 +144,7 @@ async def get_file_ids(client: Client, message_id: str) -> FileId:
         or msg.video_note
     )
     if not media:
-        raise ValueError(f"message {message_id} contains no streamable media")
+        raise web.HTTPNotFound(reason=f"message {message_id} contains no streamable media")
 
     return FileId.decode(media.file_id)
 
@@ -544,8 +562,15 @@ class StreamingService:
         file_name  = file_data["file_name"]
         message_id = str(file_data["message_id"])
 
+        # Verify file properties from the Flog/dump channel.
+        # get_file_properties first checks in-memory cache; on miss it calls
+        # get_file_ids which fetches the Telegram message and raises
+        # web.HTTPNotFound if the message is gone or contains no media.
         try:
             file_id = await self.streamer.get_file_properties(message_id)
+        except web.HTTPNotFound:
+            # Re-raise directly — the message is gone from the log channel.
+            raise
         except asyncio.CancelledError:
             raise
         except Exception as exc:
@@ -592,9 +617,14 @@ class StreamingService:
             "Content-Length":              str(req_length),
             "Content-Disposition":         f'{disposition}; filename="{file_name}"',
             "Accept-Ranges":               "bytes",
-            "Cache-Control":               "public, max-age=3600",
+            # no-store ensures VLC / MX Player re-issues range requests
+            # instead of serving stale cached data.
+            "Cache-Control":               "no-store",
             "Access-Control-Allow-Origin": "*",
+            # TCP keepalive helps external players maintain the connection
+            # across long pauses between user interactions.
             "Connection":                  "keep-alive",
+            "Keep-Alive":                  "timeout=60, max=1000",
             "X-Content-Type-Options":      "nosniff",
             "X-File-Size":                 str(file_size),
         }

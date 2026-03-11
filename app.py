@@ -118,6 +118,19 @@ def build_app(bot: Bot, database) -> web.Application:
         if not file_data:
             raise web.HTTPNotFound(reason="File not found")
 
+        # Also verify the file exists in the Flog/dump channel so we can
+        # surface a clean 404 instead of a player error mid-stream.
+        try:
+            from helper.stream import get_file_ids
+            await get_file_ids(bot, str(file_data["message_id"]))
+        except web.HTTPNotFound:
+            raise
+        except Exception as exc:
+            logger.warning(
+                "stream_page Flog verification failed: hash=%s err=%s", file_hash, exc
+            )
+            raise web.HTTPNotFound(reason="File no longer available on Telegram")
+
         allowed, _ = await check_bandwidth_limit(database)
         if not allowed:
             raise web.HTTPServiceUnavailable(reason="bandwidth limit exceeded")

@@ -791,6 +791,24 @@
     }
     .pip-return-btn:active { transform: scale(.97); }
 
+    /* ── UI Layer: when settings open, intercept all non-settings clicks ── */
+    .settings-layer {
+      display: none;
+      position: absolute;
+      inset: 0;
+      z-index: 199;         /* below popup (200) but above video content */
+      background: transparent;
+      cursor: default;
+    }
+    .settings-layer.active { display: block; }
+    /* On mobile the layer must be fixed and cover the full viewport */
+    @media (max-width: 600px) {
+      .settings-layer {
+        position: fixed;
+        z-index: 2001;     /* between ctrl-bar and popup */
+      }
+    }
+
     /* ── Settings popup ──────────────────────────────────────
        Lives inside .video-wrapper (isolation:isolate).
        z-index: 200 on desktop; overridden to 2002 on mobile.
@@ -1364,14 +1382,15 @@
           </div>
 
           <!-- Video element.
-               preload="auto"  → browser starts buffering immediately for
-                                  fast first-frame and low-latency seeks.
-               crossorigin     → enables CORS caching by shared proxies.
-               src on <video>  → cleaner range-request handling vs <source>. -->
+               preload="metadata" → fetches only headers/duration; avoids wasting
+                                    bandwidth before the user presses play, and
+                                    lets the browser start rendering faster.
+               crossorigin        → enables CORS caching by shared proxies.
+               src on <video>     → cleaner range-request handling vs <source>. -->
           <video id="player"
                  playsinline
                  webkit-playsinline
-                 preload="auto"
+                 preload="metadata"
                  crossorigin="anonymous"
                  src="{{ stream_url }}">
           </video>
@@ -1389,6 +1408,9 @@
               <div class="progress-thumb" id="progress-thumb"></div>
             </div>
           </div>
+
+          <!-- UI layer: blocks all non-settings interactions when menu is open -->
+          <div class="settings-layer" id="settings-layer" onclick="closeSettings()"></div>
 
           <!-- ── Settings popup (INSIDE wrapper → survives fullscreen) ── -->
           <div class="settings-popup" id="settings-popup" role="dialog" aria-label="Player Settings">
@@ -1483,19 +1505,14 @@
               <i class="fa-solid fa-play" id="play-icon"></i>
             </button>
 
-            <!-- Seek back 10s -->
-            <button class="ctrl-btn seek-btn" onclick="seekRelative(-10)" title="Rewind 10s">
-              <i class="fa-solid fa-rotate-left"></i>
-            </button>
+            <!-- Time display -->
+            <span class="ctrl-time" id="ctrl-time">0:00 / 0:00</span>
 
-            <!-- Seek forward 10s -->
-            <button class="ctrl-btn seek-btn" onclick="seekRelative(10)" title="Forward 10s">
-              <i class="fa-solid fa-rotate-right"></i>
-            </button>
+            <div class="ctrl-spacer"></div>
 
-            <!-- Volume -->
+            <!-- Volume / Mute -->
             <div class="vol-group">
-              <button class="ctrl-btn" id="mute-btn" onclick="toggleMute()" title="Mute (M)">
+              <button class="ctrl-btn" id="mute-btn" onclick="toggleMute()" title="Mute/Unmute (M)">
                 <i class="fa-solid fa-volume-high" id="mute-icon"></i>
               </button>
               <input type="range" class="vol-slider" id="vol-slider"
@@ -1506,20 +1523,15 @@
 
             <div class="ctrl-sep"></div>
 
-            <!-- Time display -->
-            <span class="ctrl-time" id="ctrl-time">0:00 / 0:00</span>
-
-            <div class="ctrl-spacer"></div>
-
-            <!-- PiP -->
-            <button class="ctrl-btn" id="pip-btn" onclick="togglePiP()" title="Picture-in-Picture (P)">
-              <i class="fa-solid fa-window-restore"></i>
-            </button>
-
             <!-- Settings — z-index and pointer-events are explicitly set
                  on .ctrl-btn so this button can NEVER be blocked by the overlay -->
             <button class="ctrl-btn" id="settings-btn" onclick="toggleSettings(event)" title="Settings (S)">
               <i class="fa-solid fa-gear"></i>
+            </button>
+
+            <!-- PiP -->
+            <button class="ctrl-btn" id="pip-btn" onclick="togglePiP()" title="Picture-in-Picture (P)">
+              <i class="fa-solid fa-window-restore"></i>
             </button>
 
             <!-- Fullscreen -->
@@ -1530,13 +1542,6 @@
           </div>
 
         </div><!-- /video-wrapper -->
-
-        <!-- PiP action bar (below player) -->
-        <div class="pip-action-bar">
-          <button class="pip-btn" id="pip-bar-btn" onclick="togglePiP()">
-            <i class="fa-solid fa-window-restore"></i> Picture-in-Picture
-          </button>
-        </div>
 
         {% else %}
         <!-- ── Unsupported format banner ──────────────────────── -->
@@ -1554,7 +1559,7 @@
         {% endif %}
 
       {% elif file_type == 'audio' %}
-      <audio id="player" controls preload="auto"
+    <audio id="player" controls preload="metadata"
              style="width:100%;padding:28px 20px;display:block;background:transparent;">
         <source src="{{ stream_url }}" type="{{ mime_type }}">
       </audio>
@@ -1591,7 +1596,7 @@
         <span class="val" id="status-val" style="color:var(--status-playing)">Ready</span>
       </div>
       <div class="clr">
-        <button class="clbtn" onclick="copyVideoUrl()">
+        <button class="clbtn" onclick="copyDownloadUrl()">
           <i class="fa-solid fa-copy"></i> Copy Stream URL
         </button>
       </div>
@@ -2126,8 +2131,10 @@
   function openSettings() {
     const popup   = document.getElementById('settings-popup');
     const overlay = document.getElementById('settings-overlay');
+    const layer   = document.getElementById('settings-layer');
     if (popup)   popup.classList.add('open');
     if (overlay) overlay.classList.add('active');
+    if (layer)   layer.classList.add('active');
     settingsOpen = true;
     const btn = document.getElementById('settings-btn');
     if (btn) btn.classList.add('active');
@@ -2136,8 +2143,10 @@
   function closeSettings() {
     const popup   = document.getElementById('settings-popup');
     const overlay = document.getElementById('settings-overlay');
+    const layer   = document.getElementById('settings-layer');
     if (popup)   popup.classList.remove('open');
     if (overlay) overlay.classList.remove('active');
+    if (layer)   layer.classList.remove('active');
     settingsOpen   = false;
     speedPanelOpen = false;
 
@@ -2306,30 +2315,30 @@
   function onEnterPiP() {
     const banner = document.getElementById('pip-banner');
     const btn    = document.getElementById('pip-btn');
-    const barBtn = document.getElementById('pip-bar-btn');
     if (banner) banner.classList.add('active');
     if (btn)    btn.classList.add('active');
-    if (barBtn) barBtn.classList.add('pip-active');
     showToast('Playing in Picture-in-Picture');
   }
 
   function onLeavePiP() {
     const banner = document.getElementById('pip-banner');
     const btn    = document.getElementById('pip-btn');
-    const barBtn = document.getElementById('pip-bar-btn');
     if (banner) banner.classList.remove('active');
     if (btn)    btn.classList.remove('active');
-    if (barBtn) barBtn.classList.remove('pip-active');
     showToast('Returned from Picture-in-Picture');
   }
 
-  // External player launchers
+  // External player launchers — use download URL for direct range-request
+  // optimisation: external players like VLC and MX Player start faster when
+  // pointed to /dl/ because it forces the server to send a
+  // Content-Disposition:attachment header which prevents any intermediate
+  // buffering / transcoding layer from delaying the first byte.
   const go = u => { location.href = u; };
-  function vlc_player()    { go('vlc://' + STREAM_URL); }
-  function mx_player()     { go('intent:' + STREAM_URL + '#Intent;package=com.mxtech.videoplayer.ad;end'); }
-  function playit_player() { go('intent:' + STREAM_URL + '#Intent;package=com.playit.videoplayer;end'); }
-  function km_player()     { go('intent:' + STREAM_URL + '#Intent;package=com.kmplayer;end'); }
-  function s_player()      { go('intent:' + STREAM_URL + '#Intent;package=com.simplemobiletools.videoplayer;end'); }
+  function vlc_player()    { go('vlc://' + DOWNLOAD_URL); }
+  function mx_player()     { go('intent:' + DOWNLOAD_URL + '#Intent;package=com.mxtech.videoplayer.ad;end'); }
+  function playit_player() { go('intent:' + DOWNLOAD_URL + '#Intent;package=com.playit.videoplayer;end'); }
+  function km_player()     { go('intent:' + DOWNLOAD_URL + '#Intent;package=com.kmplayer;end'); }
+  function s_player()      { go('intent:' + DOWNLOAD_URL + '#Intent;package=com.simplemobiletools.videoplayer;end'); }
 
   // Download (fast — fires a hidden anchor immediately)
   function lazyDownload() {
@@ -2343,8 +2352,10 @@
   }
 
   // Copy helpers
-  function copyLink()     { navigator.clipboard.writeText(location.href).then(() => showToast('Page link copied!')); }
-  function copyVideoUrl() { navigator.clipboard.writeText(STREAM_URL).then(() => showToast('Stream URL copied!')); }
+  function copyLink()        { navigator.clipboard.writeText(location.href).then(() => showToast('Page link copied!')); }
+  // Copy Stream URL copies the /dl/ URL so external apps (and clipboard) get
+  // the direct download link that starts playback immediately.
+  function copyDownloadUrl() { navigator.clipboard.writeText(DOWNLOAD_URL).then(() => showToast('Stream URL copied!')); }
 
   // Status helper
   function setStatus(msg, color) {
@@ -2376,12 +2387,6 @@
         break;
       case 'm':
         if (FILE_TYPE === 'video' || FILE_TYPE === 'audio') toggleMute();
-        break;
-      case 'arrowleft':
-        if (video && FILE_TYPE === 'video' && BROWSER_PLAYABLE) { e.preventDefault(); seekRelative(-10); }
-        break;
-      case 'arrowright':
-        if (video && FILE_TYPE === 'video' && BROWSER_PLAYABLE) { e.preventDefault(); seekRelative(10); }
         break;
       case 'arrowup':
         if (video) {

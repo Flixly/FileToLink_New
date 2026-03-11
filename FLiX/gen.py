@@ -607,9 +607,10 @@ async def cb_owner_revoke_yes(client: Client, callback: CallbackQuery):
 
     safe_name = escape_markdown(file_data["file_name"])
     await callback.message.edit_text(
-        f"🗑️ **{small_caps('file revoked successfully')}!**\n\n"
+        f"🚫 **{small_caps('access revoked')}**\n\n"
         f"📂 **{small_caps('file')}:** `{safe_name}`\n\n"
-        "ᴀʟʟ ʟɪɴᴋꜱ ʜᴀᴠᴇ ʙᴇᴇɴ ɪɴᴠᴀʟɪᴅᴀᴛᴇᴅ.",
+        f"✅ **{small_caps('revoke successful')}** — ᴀᴄᴄᴇꜱꜱ ᴛᴏ ᴛʜɪꜱ ꜰɪʟᴇ ʜᴀꜱ ʙᴇᴇɴ ᴘᴇʀᴍᴀɴᴇɴᴛʟʏ ʀᴇᴠᴏᴋᴇᴅ.\n"
+        "ᴀʟʟ ꜱᴛʀᴇᴀᴍ ᴀɴᴅ ᴅᴏᴡɴʟᴏᴀᴅ ʟɪɴᴋꜱ ꜰᴏʀ ᴛʜɪꜱ ꜰɪʟᴇ ᴀʀᴇ ɴᴏᴡ ɪɴᴠᴀʟɪᴅ.",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton(
                 f"⬅️ {small_caps('back to user files')}",
@@ -617,7 +618,7 @@ async def cb_owner_revoke_yes(client: Client, callback: CallbackQuery):
             )],
         ]),
     )
-    await callback.answer("✅ ꜰɪʟᴇ ʀᴇᴠᴏᴋᴇᴅ!", show_alert=False)
+    await callback.answer("✅ Access revoked successfully", show_alert=False)
 
 
 @Client.on_callback_query(filters.regex(r"^ownrevoke_no_"), group=0)
@@ -707,14 +708,15 @@ async def cb_revoke_yes(client: Client, callback: CallbackQuery):
 
     safe_name = escape_markdown(file_data["file_name"])
     await callback.message.edit_text(
-        f"🗑️ **{small_caps('file revoked successfully')}!**\n\n"
+        f"🚫 **{small_caps('access revoked')}**\n\n"
         f"📂 **{small_caps('file')}:** `{safe_name}`\n\n"
-        "ᴀʟʟ ʟɪɴᴋꜱ ʜᴀᴠᴇ ʙᴇᴇɴ ɪɴᴠᴀʟɪᴅᴀᴛᴇᴅ.",
+        f"✅ **{small_caps('revoke successful')}** — ᴀᴄᴄᴇꜱꜱ ᴛᴏ ᴛʜɪꜱ ꜰɪʟᴇ ʜᴀꜱ ʙᴇᴇɴ ᴘᴇʀᴍᴀɴᴇɴᴛʟʏ ʀᴇᴠᴏᴋᴇᴅ.\n"
+        "ᴀʟʟ ꜱᴛʀᴇᴀᴍ ᴀɴᴅ ᴅᴏᴡɴʟᴏᴀᴅ ʟɪɴᴋꜱ ꜰᴏʀ ᴛʜɪꜱ ꜰɪʟᴇ ᴀʀᴇ ɴᴏᴡ ɪɴᴠᴀʟɪᴅ.",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton(f"⬅️ {small_caps('back to files')}", callback_data=f"userfiles_{back_page}")],
         ]),
     )
-    await callback.answer("✅ ꜰɪʟᴇ ʀᴇᴠᴏᴋᴇᴅ!", show_alert=False)
+    await callback.answer("✅ Access revoked successfully", show_alert=False)
 
 
 @Client.on_callback_query(filters.regex(r"^revoke_no_"), group=0)
