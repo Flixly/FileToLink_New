@@ -529,7 +529,7 @@
       padding: 0 12px;
       opacity: 0;
       transition: opacity .25s ease;
-      z-index: 2001;
+      z-index: 12;
       cursor: pointer;
     }
     .video-wrapper:hover .progress-row,
@@ -588,9 +588,7 @@
       background: linear-gradient(transparent, rgba(0,0,0,.88));
       opacity: 0;
       transition: opacity .25s ease;
-      /* z-index must exceed the mobile overlay (1999) so buttons stay
-         clickable even when the settings backdrop is displayed. */
-      z-index: 2001;
+      z-index: 15;
       border-radius: 0 0 24px 24px;
       pointer-events: auto;
     }
@@ -792,42 +790,36 @@
     /* ── UI Layer: when settings open, intercept all non-settings clicks ── */
     .settings-layer {
       display: none;
-      position: absolute;
+      position: fixed;
       inset: 0;
-      z-index: 199;         /* below popup (200) but above video content */
+      z-index: 9990;
       background: transparent;
       cursor: default;
+      touch-action: none;
     }
     .settings-layer.active { display: block; }
-    /* On mobile the layer must be fixed and cover the full viewport */
-    @media (max-width: 600px) {
-      .settings-layer {
-        position: fixed;
-        z-index: 2001;     /* between ctrl-bar and popup */
-      }
-    }
 
     /* ── Settings popup — YouTube-style premium redesign ─────────
        Desktop: absolute bottom-right above ctrl-bar.
        Mobile: fixed bottom sheet with slide-up animation.
-       z-index: 200 on desktop; 2002 on mobile (above ctrl-bar 2001).
+       Always uses fixed positioning to escape player stacking context.
     ────────────────────────────────────────────────────────── */
     .settings-popup {
-      position: absolute;
-      bottom: 58px;
-      right: 8px;
+      position: fixed;
+      bottom: 70px;
+      right: 16px;
       background: var(--popup-bg);
       border: 1px solid var(--popup-border);
       border-radius: 18px;
       box-shadow: var(--popup-shadow);
       padding: 0;
-      min-width: 280px;
-      max-width: calc(100vw - 24px);
-      z-index: 200;
+      min-width: 290px;
+      max-width: min(340px, calc(100vw - 24px));
+      z-index: 9999;
       opacity: 0;
       transform: translateY(12px) scale(.96);
       pointer-events: none;
-      transition: opacity .22s ease, transform .22s cubic-bezier(.34,1.56,.64,1);
+      transition: opacity .22s ease, transform .25s cubic-bezier(.34,1.56,.64,1);
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
       isolation: isolate;
@@ -844,19 +836,17 @@
         max-width: 100vw;
         padding: 0;
         transform: translateY(100%);
-        /* Portrait: cap at 82vh so the sheet never covers the full screen */
         max-height: 82vh;
-        overflow: hidden;           /* panels handle their own scroll */
-        z-index: 2002;
+        overflow: hidden;
+        z-index: 9999;
         transition: opacity .25s ease, transform .3s cubic-bezier(.22,.61,.36,1);
         display: flex;
         flex-direction: column;
       }
     }
-    /* Portrait orientation: slightly shorter sheet to clear the ctrl-bar */
     @media (max-width: 600px) and (orientation: portrait) {
       .settings-popup {
-        max-height: 78vh;
+        max-height: 80vh;
       }
     }
 
@@ -1128,8 +1118,52 @@
       white-space: nowrap;
     }
 
-    /* Speed submenu custom slider */
-    .speed-custom-section {
+    /* Speed submenu grid: horizontal single row of chips */
+    #speed-sub-list.grid-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      padding: 10px 10px 4px;
+    }
+    .speed-chips-row {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 5px;
+      padding: 0 0 6px;
+    }
+    @media (max-width: 480px) {
+      .speed-chips-row {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+    .speed-chip-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 9px 4px;
+      border-radius: 10px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.1);
+      color: var(--text-secondary);
+      font-size: .72rem;
+      font-weight: 600;
+      font-family: 'Poppins', sans-serif;
+      cursor: pointer;
+      transition: all .15s ease;
+      min-height: 40px;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .speed-chip-btn:hover { background: rgba(102,126,234,.2); color: #667eea; border-color: rgba(102,126,234,.4); }
+    .speed-chip-btn.active {
+      background: linear-gradient(135deg, rgba(102,126,234,.3), rgba(118,75,162,.3));
+      color: #a78bfa;
+      border-color: #667eea;
+      font-weight: 700;
+    }
+    [data-theme="light"] .speed-chip-btn { background: rgba(102,126,234,.07); border-color: rgba(102,126,234,.18); color: #4a5568; }
+    [data-theme="light"] .speed-chip-btn:hover { background: rgba(102,126,234,.15); color: #667eea; }
+    [data-theme="light"] .speed-chip-btn.active { background: rgba(102,126,234,.2); color: #4c51bf; }
       padding: 4px 14px 10px;
       border-top: 1px solid rgba(255,255,255,.06);
       margin-top: 4px;
@@ -1222,20 +1256,14 @@
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,.5);
-      /* z-index sits between ctrl-bar (10) and the popup (2000).
-         pointer-events:none keeps the ctrl-bar and its buttons fully
-         clickable even when the overlay is active on mobile.
-         The popup itself (pointer-events:all when .open) handles taps. */
-      z-index: 1999;
+      background: rgba(0,0,0,.6);
+      z-index: 9991;
       pointer-events: none;
     }
     .settings-overlay.active {
       display: block;
       pointer-events: auto;
     }
-    /* Never show the overlay on desktop — the popup is absolute inside the player */
-    @media (min-width: 601px) { .settings-overlay { display: none !important; } }
 
     /* non-video file card */
     .doc-card {
@@ -1579,13 +1607,10 @@
             </div>
           </div>
 
-          <!-- UI layer: blocks all non-settings interactions when menu is open -->
+          <!-- UI layer: blocks all non-settings interactions when menu is open (position:fixed in CSS) -->
           <div class="settings-layer" id="settings-layer" onclick="closeSettings()"></div>
 
-          <!-- ── Settings popup (INSIDE wrapper → survives fullscreen) ──
-               YouTube-style premium settings with slide-in submenus.
-               z-index 200 on desktop, 2002 on mobile (above ctrl-bar 2001).
-          ─────────────────────────────────────────────────────────────── -->
+          <!-- ── Settings popup (position:fixed → escapes stacking context, works on mobile) ── -->
           <div class="settings-popup" id="settings-popup" role="dialog" aria-label="Player Settings">
             <div class="settings-drag-handle"></div>
 
@@ -1642,39 +1667,22 @@
                   <span class="settings-sub-title">Playback Speed</span>
                   <button class="settings-close-btn" onclick="closeSettings()" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
                 </div>
-                <div class="settings-sub-list grid-layout" id="speed-sub-list">
-                  <div class="settings-sub-item" data-speed="0.25" data-label="0.25×" onclick="selectSpeed(this)">
-                    <div class="sub-item-check"><i class="fa-solid fa-check hidden"></i></div>
-                    <span class="sub-item-label">0.25×</span>
+                <div class="settings-sub-list" id="speed-sub-list" style="padding:10px 10px 4px;">
+                  <!-- Horizontal speed grid row -->
+                  <div class="speed-chips-row" id="speed-chips-row">
+                    <button class="speed-chip-btn" data-speed="0.25" onclick="selectSpeedChip(this)">0.25×</button>
+                    <button class="speed-chip-btn" data-speed="0.5" onclick="selectSpeedChip(this)">0.5×</button>
+                    <button class="speed-chip-btn" data-speed="0.75" onclick="selectSpeedChip(this)">0.75×</button>
+                    <button class="speed-chip-btn active" data-speed="1" onclick="selectSpeedChip(this)">1×</button>
+                    <button class="speed-chip-btn" data-speed="1.25" onclick="selectSpeedChip(this)">1.25×</button>
+                    <button class="speed-chip-btn" data-speed="1.5" onclick="selectSpeedChip(this)">1.5×</button>
+                    <button class="speed-chip-btn" data-speed="1.75" onclick="selectSpeedChip(this)">1.75×</button>
+                    <button class="speed-chip-btn" data-speed="2" onclick="selectSpeedChip(this)">2×</button>
                   </div>
-                  <div class="settings-sub-item" data-speed="0.5" data-label="0.5×" onclick="selectSpeed(this)">
-                    <div class="sub-item-check"><i class="fa-solid fa-check hidden"></i></div>
-                    <span class="sub-item-label">0.5× — Slow</span>
-                  </div>
-                  <div class="settings-sub-item" data-speed="0.75" data-label="0.75×" onclick="selectSpeed(this)">
-                    <div class="sub-item-check"><i class="fa-solid fa-check hidden"></i></div>
-                    <span class="sub-item-label">0.75×</span>
-                  </div>
-                  <div class="settings-sub-item sub-active" data-speed="1" data-label="Normal" onclick="selectSpeed(this)">
-                    <div class="sub-item-check"><i class="fa-solid fa-check"></i></div>
-                    <span class="sub-item-label">Normal</span>
-                  </div>
-                  <div class="settings-sub-item" data-speed="1.25" data-label="1.25×" onclick="selectSpeed(this)">
-                    <div class="sub-item-check"><i class="fa-solid fa-check hidden"></i></div>
-                    <span class="sub-item-label">1.25×</span>
-                  </div>
-                  <div class="settings-sub-item" data-speed="1.5" data-label="1.5×" onclick="selectSpeed(this)">
-                    <div class="sub-item-check"><i class="fa-solid fa-check hidden"></i></div>
-                    <span class="sub-item-label">1.5×</span>
-                  </div>
-                  <div class="settings-sub-item" data-speed="2" data-label="2×" onclick="selectSpeed(this)">
-                    <div class="sub-item-check"><i class="fa-solid fa-check hidden"></i></div>
-                    <span class="sub-item-label">2× — Fast</span>
-                  </div>
-                  <!-- Custom speed slider -->
+                  <!-- Custom speed slider in second line -->
                   <div class="speed-custom-section">
                     <div class="speed-custom-title">
-                      <span>Custom</span>
+                      <span>Custom Speed</span>
                       <span class="custom-speed-val" id="custom-speed-val">1.0×</span>
                     </div>
                     <input type="range" class="custom-speed-slider" id="custom-speed-slider"
@@ -2029,19 +2037,30 @@
     });
 
     /* Tap interaction:
-       - Tap to RESUME when paused (single-finger touch or click while paused)
-       - Tap to PAUSE is disabled — use the Pause button in the control bar
+       - First tap: show controls if hidden
+       - Second tap (controls visible + playing): pause/play
        - If settings menu is open, a tap closes it instead */
-    video.addEventListener('click', () => {
+    video.addEventListener('click', (e) => {
       if (settingsOpen) { closeSettings(); return; }
-      // Only resume playback on tap — never pause via tap
-      if (video.paused) {
-        video.play().catch(err => {
-          showToast('Playback error: ' + err.message, 'fa-circle-xmark');
-        });
+      if (!_ctrlVisible) {
+        showControls();
+        return;
       }
-      // If playing, tap does nothing (pause only via Pause button)
+      togglePlay();
     });
+
+    /* Touch: show controls on any tap inside wrapper */
+    if (wrapper) {
+      wrapper.addEventListener('touchend', (e) => {
+        if (settingsOpen) return;
+        const target = e.target;
+        const isCtrlBtn = target.closest('.ctrl-btn') || target.closest('.progress-row') || target.closest('.big-play');
+        if (!isCtrlBtn && !_ctrlVisible) {
+          showControls();
+          e.preventDefault();
+        }
+      }, { passive: false });
+    }
 
     /* Seek via progress bar */
     const track = document.getElementById('progress-track');
@@ -2098,17 +2117,39 @@
 
     /* Auto-hide controls (touch-friendly) */
     let hideTimer;
+    let _ctrlVisible = false;
+
     const showControls = () => {
       if (wrapper) wrapper.classList.add('ctrl-visible');
+      _ctrlVisible = true;
       clearTimeout(hideTimer);
-      hideTimer = setTimeout(() => {
-        if (video && !video.paused) wrapper && wrapper.classList.remove('ctrl-visible');
-      }, 3200);
+      hideTimer = setTimeout(hideControlsIfPlaying, 3200);
     };
+
+    const hideControlsIfPlaying = () => {
+      if (video && !video.paused && !settingsOpen) {
+        if (wrapper) wrapper.classList.remove('ctrl-visible');
+        _ctrlVisible = false;
+      } else {
+        hideTimer = setTimeout(hideControlsIfPlaying, 1000);
+      }
+    };
+
     if (wrapper) {
       wrapper.addEventListener('mousemove',  showControls);
-      wrapper.addEventListener('touchstart', showControls, { passive: true });
+      wrapper.addEventListener('touchstart', (e) => {
+        showControls();
+      }, { passive: true });
     }
+
+    /* Hide controls when tapping outside player */
+    document.addEventListener('touchstart', (e) => {
+      if (wrapper && !wrapper.contains(e.target) && !settingsOpen) {
+        if (wrapper) wrapper.classList.remove('ctrl-visible');
+        _ctrlVisible = false;
+        clearTimeout(hideTimer);
+      }
+    }, { passive: true });
 
     /* Populate subtitle / audio tracks */
     populateTracks();
@@ -2340,11 +2381,19 @@
     if (overlay) overlay.classList.add('active');
     if (layer)   layer.classList.add('active');
     settingsOpen = true;
-    // Always start at main panel
     _showPanel('main');
     activeSubPanel = null;
     const btn = document.getElementById('settings-btn');
     if (btn) btn.classList.add('active');
+
+    // On desktop: position popup above settings button
+    if (popup && window.innerWidth > 600 && btn) {
+      const btnRect = btn.getBoundingClientRect();
+      popup.style.bottom  = (window.innerHeight - btnRect.top + 8) + 'px';
+      popup.style.right   = (window.innerWidth - btnRect.right + 0) + 'px';
+      popup.style.top     = 'auto';
+      popup.style.left    = 'auto';
+    }
   }
 
   function closeSettings() {
@@ -2428,33 +2477,43 @@
     }
   });
 
-  // ── Speed control (new submenu system) ─────────────────────────────────────
-  // selectSpeed() is called by onclick on each speed sub-item.
-  function selectSpeed(itemEl) {
-    const speed = parseFloat(itemEl.dataset.speed);
-    const label = itemEl.dataset.label || (speed + '×');
+  // ── Speed control (chip grid system) ──────────────────────────────────────
+  function selectSpeedChip(btnEl) {
+    const speed = parseFloat(btnEl.dataset.speed);
+    const label = speed === 1 ? 'Normal' : (speed + '×');
 
     if (video) video.playbackRate = speed;
 
-    // Update checkmarks in speed submenu
-    document.querySelectorAll('#speed-sub-list .settings-sub-item[data-speed]').forEach(el => {
-      el.classList.remove('sub-active');
-      const check = el.querySelector('.sub-item-check i');
-      if (check) check.classList.add('hidden');
+    document.querySelectorAll('#speed-chips-row .speed-chip-btn').forEach(el => {
+      el.classList.remove('active');
     });
-    itemEl.classList.add('sub-active');
-    const check = itemEl.querySelector('.sub-item-check i');
-    if (check) check.classList.remove('hidden');
+    btnEl.classList.add('active');
 
-    // Update main-panel preview value
     const mainVal = document.getElementById('speed-main-val');
     if (mainVal) mainVal.textContent = label;
 
-    // Sync custom slider to current speed
     const slider = document.getElementById('custom-speed-slider');
     const valEl  = document.getElementById('custom-speed-val');
     if (slider) slider.value = speed;
     if (valEl)  valEl.textContent = speed.toFixed(speed % 1 === 0 ? 0 : 2) + '×';
+
+    showToast('Speed: ' + label, 'fa-gauge-high');
+  }
+
+  // Legacy selectSpeed still works for backward compat
+  function selectSpeed(itemEl) {
+    const speed = parseFloat(itemEl.dataset.speed);
+    const label = itemEl.dataset.label || (speed + '×');
+    if (video) video.playbackRate = speed;
+    const mainVal = document.getElementById('speed-main-val');
+    if (mainVal) mainVal.textContent = label;
+    const slider = document.getElementById('custom-speed-slider');
+    const valEl  = document.getElementById('custom-speed-val');
+    if (slider) slider.value = speed;
+    if (valEl)  valEl.textContent = speed.toFixed(speed % 1 === 0 ? 0 : 2) + '×';
+    document.querySelectorAll('#speed-chips-row .speed-chip-btn').forEach(el => {
+      el.classList.toggle('active', parseFloat(el.dataset.speed) === speed);
+    });
   }
 
   function onCustomSpeedSlider(val) {
@@ -2466,11 +2525,9 @@
     if (valEl)   valEl.textContent  = display;
     if (mainVal) mainVal.textContent = display;
 
-    // Deselect all preset items — custom value selected
-    document.querySelectorAll('#speed-sub-list .settings-sub-item[data-speed]').forEach(el => {
-      el.classList.remove('sub-active');
-      const check = el.querySelector('.sub-item-check i');
-      if (check) check.classList.add('hidden');
+    // Highlight chip if it matches a preset exactly
+    document.querySelectorAll('#speed-chips-row .speed-chip-btn').forEach(el => {
+      el.classList.toggle('active', Math.abs(parseFloat(el.dataset.speed) - speed) < 0.001);
     });
   }
 
@@ -2553,17 +2610,18 @@
 
   // Legacy stubs (keep for backward compat with keyboard shortcuts / old code)
   function applySpeed(speed, label) {
-    const items = document.querySelectorAll('#speed-sub-list .settings-sub-item[data-speed]');
-    let matched = null;
-    items.forEach(el => { if (parseFloat(el.dataset.speed) === speed) matched = el; });
-    if (matched) selectSpeed(matched);
-    else {
-      if (video) video.playbackRate = speed;
-      const mainVal = document.getElementById('speed-main-val');
-      if (mainVal) mainVal.textContent = label || (speed + '×');
-    }
+    if (video) video.playbackRate = speed;
+    const mainVal = document.getElementById('speed-main-val');
+    if (mainVal) mainVal.textContent = label || (speed === 1 ? 'Normal' : speed + '×');
+    const slider = document.getElementById('custom-speed-slider');
+    const valEl  = document.getElementById('custom-speed-val');
+    if (slider) slider.value = speed;
+    if (valEl)  valEl.textContent = speed.toFixed(speed % 1 === 0 ? 0 : 2) + '×';
+    document.querySelectorAll('#speed-chips-row .speed-chip-btn').forEach(el => {
+      el.classList.toggle('active', Math.abs(parseFloat(el.dataset.speed) - speed) < 0.001);
+    });
   }
-  function toggleSpeedPanel()  { openSubPanel('speed'); }
+  function toggleSpeedPanel()    { openSubPanel('speed'); }
   function activateCustomSpeed() { openSubPanel('speed'); }
 
   // Picture-in-Picture

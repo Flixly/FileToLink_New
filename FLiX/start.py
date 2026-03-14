@@ -21,50 +21,56 @@ def show_nav(page: str, user=None, bot_username: str = "") -> tuple[str, InlineK
 
     if page == "start":
         text = (
-            f"👋 **ʜᴇʟʟᴏ {mention}**,\n\n"
-            "ɪ ᴀᴍ ᴀ ᴘʀᴇᴍɪᴜᴍ ꜰɪʟᴇ ꜱᴛʀᴇᴀᴍ ʙᴏᴛ.\n\n"
-            "📂 **ꜱᴇɴᴅ ᴍᴇ ᴀɴʏ ꜰɪʟᴇ** "
-            "(ᴠɪᴅᴇᴏ, ᴀᴜᴅɪᴏ, ᴅᴏᴄᴜᴍᴇɴᴛ) ᴀɴᴅ ɪ ᴡɪʟʟ ɢᴇɴᴇʀᴀᴛᴇ ᴀ ᴅɪʀᴇᴄᴛ "
-            "ᴅᴏᴡɴʟᴏᴀᴅ ᴀɴᴅ ꜱᴛʀᴇᴀᴍɪɴɢ ʟɪɴᴋ ꜰᴏʀ ʏᴏᴜ."
+            f"👋 **Hello, {mention}!**\n\n"
+            "I'm a fast and secure **File Streaming Bot**.\n\n"
+            "📤 **Send me any file** — video, audio, image, or document — "
+            "and I'll instantly generate a **streaming link** and a **direct download link** for you.\n\n"
+            "✨ Share your links anywhere — no login required."
         )
 
         buttons = [[
-            InlineKeyboardButton("📚 ʜᴇʟᴘ", callback_data="help"),
-            InlineKeyboardButton("ℹ️ ᴀʙᴏᴜᴛ", callback_data="about"),
+            InlineKeyboardButton("📚 Help", callback_data="help"),
+            InlineKeyboardButton("ℹ️ About", callback_data="about"),
         ]]
 
     elif page == "help":
         text = (
-            "📚 **ʜᴇʟᴘ & ɢᴜɪᴅᴇ**\n\n"
-            "**ʜᴏᴡ ᴛᴏ ᴜꜱᴇ:**\n"
-            "1️⃣ ꜱᴇɴᴅ ᴀɴʏ ꜰɪʟᴇ ᴛᴏ ᴛʜᴇ ʙᴏᴛ\n"
-            "2️⃣ ɢᴇᴛ ɪɴꜱᴛᴀɴᴛ ꜱᴛʀᴇᴀᴍ & ᴅᴏᴡɴʟᴏᴀᴅ ʟɪɴᴋꜱ\n"
-            "3️⃣ ꜱʜᴀʀᴇ ʟɪɴᴋꜱ ᴀɴʏᴡʜᴇʀᴇ!\n\n"
-            "**ꜱᴜᴘᴘᴏʀᴛᴇᴅ ꜰɪʟᴇꜱ:**\n"
-            "🎬 ᴠɪᴅᴇᴏꜱ\n"
-            "🎵 ᴀᴜᴅɪᴏ\n"
-            "📄 ᴅᴏᴄᴜᴍᴇɴᴛꜱ\n"
-            "🖼️ ɪᴍᴀɢᴇꜱ"
+            "📚 **How to Use**\n\n"
+            "**Steps:**\n"
+            "1️⃣ Send any file to this bot\n"
+            "2️⃣ Receive instant **Stream** and **Download** links\n"
+            "3️⃣ Share the links with anyone!\n\n"
+            "**Supported File Types:**\n"
+            "🎬 Videos · 🎵 Audio · 📄 Documents · 🖼️ Images\n\n"
+            "**Tips:**\n"
+            "• Use the stream link to watch directly in browser\n"
+            "• Use the download link for external players (VLC, MX Player)\n"
+            "• Links are permanent until manually revoked"
         )
 
         buttons = [[
-            InlineKeyboardButton("🏠 ʜᴏᴍᴇ", callback_data="start")
+            InlineKeyboardButton("🏠 Home", callback_data="start"),
+            InlineKeyboardButton("ℹ️ About", callback_data="about"),
         ]]
 
     elif page == "about":
         text = (
-            "ℹ️ **ᴀʙᴏᴜᴛ ꜰɪʟᴇꜱᴛʀᴇᴀᴍ ʙᴏᴛ**\n\n"
-            f"🤖 **ʙᴏᴛ:** @{bot_username}\n\n"
-            "💻 **ᴅᴇᴠᴇʟᴏᴘᴇʀ:** @FLiX_LY\n"
-            "⚡ **ᴠᴇʀꜱɪᴏɴ:** 2.1"
+            f"ℹ️ **About This Bot**\n\n"
+            f"🤖 **Bot:** @{bot_username}\n"
+            "💡 **Purpose:** Instant file streaming & sharing\n"
+            "⚡ **Engine:** Telegram MTProto + aiohttp streaming\n"
+            "💻 **Developer:** @FLiX_LY\n"
+            "🔖 **Version:** 2.1\n\n"
+            "🔒 All files are served securely via unique encrypted links."
         )
 
         buttons = [[
-            InlineKeyboardButton("🏠 ʜᴏᴍᴇ", callback_data="start")
+            InlineKeyboardButton("🏠 Home", callback_data="start"),
+            InlineKeyboardButton("📚 Help", callback_data="help"),
         ]]
 
     else:
-        text = "ɪɴᴠᴀʟɪᴅ ᴘᴀɢᴇ"
+        text = "❌ Invalid page."
         buttons = []
 
     return text, InlineKeyboardMarkup(buttons)
