@@ -16,38 +16,15 @@ from database import Database
 
 logger = logging.getLogger(__name__)
 
-# ── Chunk / prefetch tuning ──────────────────────────────────────────────────
 # Telegram hard-caps upload.GetFile at 1 MB per request.
 CHUNK_SIZE = 1024 * 1024          # 1 MB per Telegram RPC
-
-# Very first slice served to the player — just enough to unblock buffering and
-# let VLC/MX/iOS identify the codec without waiting for a full 1 MB download.
-# 32 KB keeps TTFB under ~100 ms on typical connections.
-FIRST_CHUNK_SIZE = 32 * 1024      # 32 KB — minimal TTFB for external players
-
-# Prefetch window: keep this many chunks queued ahead of the writer.
-# 8 is the sweet-spot — smooth on fast links, low memory/bandwidth waste on
-# slow/mobile connections, and avoids over-fetching during seeks.
-PREFETCH_COUNT = 8
-
-# Per-chunk retry / back-off
+FIRST_CHUNK_SIZE = 64 * 1024      # 64 KB — minimal TTFB startup slice
+PREFETCH_COUNT = 12               # chunks queued ahead of writer
 _MAX_CHUNK_RETRIES = 5
-_RETRY_BACKOFF = 0.15             # seconds — fail-fast, retry quickly
-
-# Timeout (seconds) for a single GetFile RPC
-_RPC_TIMEOUT = 10.0               # tight timeout → fail-fast, retry sooner
-
-# ── Per-file cache inactivity TTL ────────────────────────────────────────────
-# File-metadata and thumbnail caches are evicted 5 minutes after the last
-# access to prevent memory build-up on long-running servers.
-_FILE_CACHE_TTL = 5 * 60          # 5 minutes
-
-# ── Adaptive small-chunk strategy ────────────────────────────────────────────
-# For the very first range request of a session (from_bytes == 0) we serve
-# the first FIRST_CHUNK_SIZE bytes immediately, then switch to CHUNK_SIZE.
-# For seek requests (from_bytes != 0) we also use a small initial slice to
-# feed the player immediately before pre-fetching the rest of the chunk.
-_SEEK_INITIAL_SIZE = 64 * 1024    # 64 KB initial slice on seek → instant seek
+_RETRY_BACKOFF = 0.1              # faster retry backoff
+_RPC_TIMEOUT = 10.0
+_FILE_CACHE_TTL = 5 * 60          # 5 minutes inactivity TTL
+_SEEK_INITIAL_SIZE = 64 * 1024    # 64 KB initial slice on seek
 
 MIME_TYPE_MAP = {
     "video":    "video/mp4",
@@ -92,29 +69,23 @@ _BROWSER_NATIVE_AUDIO = {
     "audio/x-aac",
 }
 
-# ── Session tracking ─────────────────────────────────────────────────────────
-# Maps session_key → last-heartbeat timestamp.
+# Session tracking: session_key → last-heartbeat timestamp
 _active_sessions: Dict[str, float] = {}
 _sessions_lock = asyncio.Lock()
-
 _SESSION_TTL = 30
 _SESSION_HEARTBEAT_INTERVAL = 5
 
-# ── Bandwidth dedup ──────────────────────────────────────────────────────────
+# Bandwidth dedup
 _bw_tracked: Dict[Tuple[str, str, int], float] = {}
 _bw_lock = asyncio.Lock()
 _BW_DEDUP_TTL = 60
 
-# ── Per-file metadata cache with last-access timestamps ──────────────────────
-# _file_meta_cache  : file_hash → {**file_data}
-# _file_cache_atime : file_hash → last-access monotonic timestamp
+# Per-file metadata cache
 _file_meta_cache:  Dict[str, dict]  = {}
 _file_cache_atime: Dict[str, float] = {}
 _cache_lock = asyncio.Lock()
 
-# ── Thumbnail URL cache (no /thumb endpoint — URL is just the og image) ──────
-# We store the artwork URL directly in stream headers; no separate endpoint
-# needed so we avoid the extra bandwidth/storage of serving thumbnail bytes.
+# Thumbnail URL cache
 _thumbnail_cache:  Dict[str, Optional[str]] = {}
 _thumb_cache_atime: Dict[str, float] = {}
 
@@ -164,13 +135,7 @@ async def get_thumbnail_url(
     file_data: dict,
     base_url: str,
 ) -> Optional[str]:
-    """Return a publicly-accessible thumbnail URL for artwork metadata headers.
-
-    This is injected into HTTP response headers (Link rel=artwork, X-Image-Url)
-    so external players (VLC, MX Player, iOS AVPlayer, AirPlay, Android
-    MediaSession) can display cover art.  No separate /thumb endpoint is used —
-    we return the Open-Graph image URL from the stream page which is already
-    publicly available with no extra bandwidth cost.
+    """Return a publicly-accessible thumbnail URL for external player artwork metadata.
 
     Returns None if no thumbnail is available.
     """
@@ -394,19 +359,13 @@ class ByteStreamer:
         part_count: int,
         chunk_size: int,
     ):
-        """Yield file chunks from Telegram with prefetch and retry logic.
-
-        Uses a prefetch queue of size PREFETCH_COUNT to keep chunks flowing
-        without blocking the HTTP writer.  The fetch worker runs concurrently
-        so the writer can serve data to the client without waiting for each
-        Telegram RPC to complete sequentially.
-        """
+        """Yield file chunks from Telegram with prefetch and retry logic."""
         client        = self.client
         media_session = await self.generate_media_session(client, file_id)
         location      = await self.get_location(file_id)
 
-        # Queue: prefetch window + a couple of extra slots for the writer
-        queue: asyncio.Queue = asyncio.Queue(maxsize=PREFETCH_COUNT + 2)
+        # Queue: prefetch window + extra slots for the writer
+        queue: asyncio.Queue = asyncio.Queue(maxsize=PREFETCH_COUNT + 4)
         fetch_task: asyncio.Task | None = None
 
         async def _fetch_worker():
@@ -574,12 +533,7 @@ class ByteStreamer:
 
 
 def _parse_range(range_header: str, file_size: int):
-    """Parse HTTP Range header and return (from_bytes, until_bytes).
-
-    Handles all common formats: 'bytes=0-', 'bytes=0-1023',
-    'bytes=-512' (suffix range), and missing/malformed headers.
-    Processing is O(1) with no allocations beyond the two ints.
-    """
+    """Parse HTTP Range header and return (from_bytes, until_bytes)."""
     if range_header:
         try:
             raw_range   = range_header.replace("bytes=", "").split(",")[0].strip()
@@ -668,23 +622,12 @@ class StreamingService:
         file_hash: str,
         is_download: bool = False,
     ) -> web.StreamResponse:
-        """Handle an HTTP streaming request with efficient range support.
-
-        Design goals:
-        - Minimal TTFB: metadata is cached; file properties are pre-resolved.
-        - Non-blocking: all I/O is async; no synchronous waits in the hot path.
-        - Fast seek: range requests are handled directly without re-initialising
-          the stream — the prefetch worker starts from the new offset immediately.
-        - Low memory: PREFETCH_COUNT=8 keeps at most ~8 MB queued per stream.
-        - Stable under load: bandwidth dedup prevents double-counting; session
-          heartbeats keep the active-connections counter accurate.
-        """
+        """Handle an HTTP streaming request with efficient range support."""
         range_header     = request.headers.get("Range", "")
         is_range_request = bool(range_header)
         client_ip        = _get_client_ip(request)
         now              = time.monotonic()
 
-        # ── Fast path: serve from cache if available ─────────────────────────
         async with _cache_lock:
             file_data = _file_meta_cache.get(file_hash)
             if file_data is not None:
@@ -708,7 +651,6 @@ class StreamingService:
         file_name  = file_data["file_name"]
         message_id = str(file_data["message_id"])
 
-        # Resolve file properties (cached after first hit — O(1) on repeat)
         try:
             file_id = await self.streamer.get_file_properties(message_id)
         except web.HTTPNotFound:
@@ -731,11 +673,7 @@ class StreamingService:
         until_bytes = min(until_bytes, file_size - 1)
         req_length  = until_bytes - from_bytes + 1
 
-        # ── Adaptive chunk strategy ───────────────────────────────────────────
-        # For the very first bytes of a stream (offset 0) use FIRST_CHUNK_SIZE
-        # to minimise TTFB.  For seek requests use _SEEK_INITIAL_SIZE.
-        # In both cases, Telegram still delivers full 1 MB chunks; we just
-        # slice the first one before forwarding to the client.
+        # Chunk offset calculation
         offset         = from_bytes - (from_bytes % CHUNK_SIZE)
         first_part_cut = from_bytes - offset
         last_part_cut  = (until_bytes % CHUNK_SIZE) + 1
@@ -764,28 +702,19 @@ class StreamingService:
             "Content-Length":              str(req_length),
             "Content-Disposition":         f'{disposition}; filename="{file_name}"',
             "Accept-Ranges":               "bytes",
-            # no-store: VLC/MX Player re-issue range requests rather than
-            # serving stale data from an intermediate cache
             "Cache-Control":               "no-store",
             "Access-Control-Allow-Origin": "*",
-            # Keep-Alive lets external players hold the TCP connection open
-            # across long pauses without triggering reconnect delays
             "Connection":                  "keep-alive",
             "Keep-Alive":                  "timeout=60, max=1000",
             "X-Content-Type-Options":      "nosniff",
             "X-File-Size":                 str(file_size),
-            # ICY / DLNA display title for external player now-playing info
             "icy-name":                    file_name,
             "icy-metaint":                 "0",
         }
         if is_range_request:
             headers["Content-Range"] = f"bytes {from_bytes}-{until_bytes}/{file_size}"
 
-        # ── Artwork metadata for external players ─────────────────────────────
-        # Inject thumbnail URL via Link header (rel=artwork) and X-Image-Url.
-        # VLC, MX Player, iOS AVPlayer/AirPlay, and Android MediaSession all
-        # recognise one or both of these headers for cover-art display.
-        # The web player DOES NOT use these — artwork is external-player only.
+        # Artwork metadata headers for external players (VLC, MX Player, iOS AVPlayer)
         try:
             base_url  = str(request.url.origin())
             thumb_url = await get_thumbnail_url(
@@ -810,6 +739,7 @@ class StreamingService:
         session_key    = f"{file_hash}:{client_ip}"
         bytes_sent     = 0
         last_heartbeat = time.monotonic()
+        is_first_chunk = True
 
         try:
             async for chunk in self.streamer.yield_file(
@@ -821,8 +751,16 @@ class StreamingService:
                 CHUNK_SIZE,
             ):
                 try:
-                    await response.write(chunk)
-                    bytes_sent += len(chunk)
+                    # For the very first chunk, send a small slice immediately
+                    # to minimize TTFB, then send the remainder
+                    if is_first_chunk and len(chunk) > FIRST_CHUNK_SIZE:
+                        await response.write(chunk[:FIRST_CHUNK_SIZE])
+                        await response.write(chunk[FIRST_CHUNK_SIZE:])
+                        bytes_sent += len(chunk)
+                    else:
+                        await response.write(chunk)
+                        bytes_sent += len(chunk)
+                    is_first_chunk = False
 
                     now = time.monotonic()
                     if now - last_heartbeat >= _SESSION_HEARTBEAT_INTERVAL:
