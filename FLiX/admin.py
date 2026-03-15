@@ -62,8 +62,10 @@ async def show_panel(client: Client, source, panel_type: str):
         )
         buttons = InlineKeyboardMarkup([
             [InlineKeyboardButton("⚡ ᴛᴏɢɢʟᴇ",         callback_data="toggle_bandwidth")],
-            [InlineKeyboardButton("✏️ ꜱᴇᴛ ʟɪᴍɪᴛ",     callback_data="set_bandwidth_limit")],
-            [InlineKeyboardButton("🔄 ʀᴇꜱᴇᴛ ᴜꜱᴀɢᴇ",   callback_data="reset_bandwidth")],
+            [
+                InlineKeyboardButton("✏️ ꜱᴇᴛ ʟɪᴍɪᴛ",     callback_data="set_bandwidth_limit"),
+                InlineKeyboardButton("🔄 ʀᴇꜱᴇᴛ ᴜꜱᴀɢᴇ",   callback_data="reset_bandwidth"),
+            ],
             [InlineKeyboardButton("⬅️ ʙᴀᴄᴋ",           callback_data="settings_back")],
         ])
 
