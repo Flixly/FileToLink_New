@@ -184,26 +184,26 @@ async def about_command(client: Client, message: Message):
     )
 
 
-@Client.on_message(filters.command("info") & filters.private, group=1)
+@Client.on_message(filters.command("info") & filters.private)
 async def info_command(client: Client, message: Message):
     if len(message.command) > 1:
         user_input = message.command[1]
         try:
             target_user = await client.get_users(user_input)
-        except (PeerIdInvalid, UsernameInvalid, Exception):
-            return await client.send_message(message.chat.id, "**❌ ɪɴᴠᴀʟɪᴅ ᴜꜱᴇʀ ɪᴅ ᴏʀ ᴜꜱᴇʀɴᴀᴍᴇ**", reply_to_message_id=message.id)
+        except Exception:
+            return await client.send_message(message.chat.id, "**❌ ᴜꜱᴇʀ ɴᴏᴛ ꜰᴏᴜɴᴅ ɪɴ ᴍʏ ᴅᴀᴛᴀʙᴀꜱᴇ.**", reply_to_message_id=message.id)
     elif message.reply_to_message:
         target_user = message.reply_to_message.from_user
     else:
         target_user = message.from_user
 
     info_text = (
-        "**👤 ᴜꜱᴇʀ ɪɴꜰᴏʀᴍᴀᴛɪᴏɴ**\n\n"
-        f"**🆔 ɪᴅ:** `{target_user.id}`\n"
+        "**👤 ᴅᴇᴛᴀɪʟᴇᴅ ᴜꜱᴇʀ ᴘʀᴏꜰɪʟᴇ**\n\n"
+        f"**🆔 ᴜꜱᴇʀ ɪᴅ:** `{target_user.id}`\n"
         f"**✨ ꜰɪʀꜱᴛ ɴᴀᴍᴇ:** `{target_user.first_name}`\n"
         f"**👤 ʟᴀꜱᴛ ɴᴀᴍᴇ:** `{target_user.last_name or 'ɴ/ᴀ'}`\n"
         f"**🔗 ᴜꜱᴇʀɴᴀᴍᴇ:** @{target_user.username or 'ɴ/ᴀ'}\n"
-        f"**🛰 ᴜꜱᴇʀ ʟɪɴᴋ:** {target_user.mention}"
+        f"**🛰 ᴘᴇʀᴍᴀɴᴇɴᴛ ʟɪɴᴋ:** [ᴄʟɪᴄᴋ ʜᴇʀᴇ](tg://user?id={target_user.id})"
     )
     await client.send_message(message.chat.id, info_text, reply_to_message_id=message.id)
 
