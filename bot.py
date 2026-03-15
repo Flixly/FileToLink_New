@@ -23,6 +23,7 @@ class Bot(Client):
         await super().start()
         me = await self.get_me()
         self.me        = me
+        Config.BOT_INFO = me
         Config.UPTIME  = time.time()
         logger.info("⚡  ʙᴏᴛ: @%s  │  ɴᴀᴍᴇ: %s  │  ɪᴅ: %s  │  ᴡᴏʀᴋᴇʀs: %s",
                     me.username, me.first_name, me.id, "50")
