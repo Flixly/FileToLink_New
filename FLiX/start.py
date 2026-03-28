@@ -9,11 +9,8 @@ logger = logging.getLogger(__name__)
 
 
 START_TEXT = "**👋 ʜᴇʏ, {}**\n\n**ɪ'ᴍ ᴛᴇʟᴇɢʀᴀᴍ ꜰɪʟᴇꜱ ꜱᴛʀᴇᴀᴍɪɴɢ ʙᴏᴛ ᴀꜱ ᴡᴇʟʟ ᴅɪʀᴇᴄᴛ ʟɪɴᴋꜱ ɢᴇɴᴇʀᴀᴛᴏʀ**\n\n**ᴡᴏʀᴋɪɴɢ ᴏɴ ᴄʜᴀɴɴᴇʟꜱ ᴀɴᴅ ᴘʀɪᴠᴀᴛᴇ ᴄʜᴀᴛ**\n\n**💕 @{}**"
-
-HELP_TEXT = "**- ᴀᴅᴅ ᴍᴇ ᴀꜱ ᴀɴ ᴀᴅᴍɪɴ ᴏɴ ᴛʜᴇ ᴄʜᴀɴɴᴇʟ**\n**- ꜱᴇɴᴅ ᴍᴇ ᴀɴʏ ᴅᴏᴄᴜᴍᴇɴᴛ ᴏʀ ᴍᴇᴅɪᴀ**\n**- ɪ'ʟʟ ᴘʀᴏᴠɪᴅᴇ ꜱᴛʀᴇᴀᴍᴀʙʟᴇ ʟɪɴᴋ**\n\n**🔞 ᴀᴅᴜʟᴛ ᴄᴏɴᴛᴇɴᴛ ꜱᴛʀɪᴄᴛʟʏ ᴘʀᴏʜɪʙɪᴛᴇᴅ.**\n\n**ʀᴇᴘᴏʀᴛ ʙᴜɢꜱ ᴛᴏ [ᴅᴇᴠᴇʟᴏᴘᴇʀ](https://t.me/FLiX_LY)**"
-
-ABOUT_TEXT = "**⚜ ᴍʏ ɴᴀᴍᴇ : {}**\n\n**✦ ᴠᴇʀꜱɪᴏɴ : `2.1.0`**\n**✦ ᴜᴘᴅᴀᴛᴇᴅ ᴏɴ : `26-ᴊᴀɴᴜᴀʀʏ-2026`**\n**✦ ᴅᴇᴠᴇʟᴏᴘᴇʀ : [٭千🅻丨乂٭](https://t.me/FLiX_LY)**"
-
+HELP_TEXT  = "**- ᴀᴅᴅ ᴍᴇ ᴀꜱ ᴀɴ ᴀᴅᴍɪɴ ᴏɴ ᴛʜᴇ ᴄʜᴀɴɴᴇʟ**\n**- ꜱᴇɴᴅ ᴍᴇ ᴀɴʏ ᴅᴏᴄᴜᴍᴇɴᴛ ᴏʀ ᴍᴇᴅɪᴀ**\n**- ɪ'ʟʟ ᴘʀᴏᴠɪᴅᴇ ꜱᴛʀᴇᴀᴍᴀʙʟᴇ ʟɪɴᴋ**\n\n**🔞 ᴀᴅᴜʟᴛ ᴄᴏɴᴛᴇɴᴛ ꜱᴛʀɪᴄᴛʟʏ ᴘʀᴏʜɪʙɪᴛᴇᴅ.**\n\n**ʀᴇᴘᴏʀᴛ ʙᴜɢꜱ ᴛᴏ [ᴅᴇᴠᴇʟᴏᴘᴇʀ](https://t.me/FLiX_LY)**"
+ABOUT_TEXT = "**⚜ ᴍʏ ɴᴀᴍᴇ : {}**\n\n**✦ ᴠᴇʀꜱɪᴏɴ : `2.2.0`**\n**✦ ᴜᴘᴅᴀᴛᴇᴅ ᴏɴ : `28-ᴍᴀʀᴄʜ-2026`**\n**✦ ᴅᴇᴠᴇʟᴏᴘᴇʀ : [٭千🅻丨乂٭](https://t.me/FLiX_LY)**"
 
 
 def show_nav(page: str, user_mention: str, bot_name: str, bot_username: str):
@@ -29,20 +26,22 @@ def show_nav(page: str, user_mention: str, bot_name: str, bot_username: str):
         ]
     elif page == "help":
         text = HELP_TEXT
-        btns = [[
-            InlineKeyboardButton("🏠 ʜᴏᴍᴇ", callback_data="start"),
-            InlineKeyboardButton("💎 ᴀʙᴏᴜᴛ", callback_data="about"),
-            InlineKeyboardButton("✖️ ᴄʟᴏꜱᴇ", callback_data="close")
-        ],
+        btns = [
+            [
+                InlineKeyboardButton("🏠 ʜᴏᴍᴇ", callback_data="start"),
+                InlineKeyboardButton("💎 ᴀʙᴏᴜᴛ", callback_data="about"),
+                InlineKeyboardButton("✖️ ᴄʟᴏꜱᴇ", callback_data="close")
+            ],
             [InlineKeyboardButton("👨‍💻 ᴅᴇᴠᴇʟᴏᴘᴇʀ", url="https://t.me/FLiX_LY")]
         ]
     elif page == "about":
         text = ABOUT_TEXT.format(bot_name)
-        btns = [[
-            InlineKeyboardButton("🏠 ʜᴏᴍᴇ", callback_data="start"),
-            InlineKeyboardButton("📖 ʜᴇʟᴘ", callback_data="help"),
-            InlineKeyboardButton("✖️ ᴄʟᴏꜱᴇ", callback_data="close")
-        ],
+        btns = [
+            [
+                InlineKeyboardButton("🏠 ʜᴏᴍᴇ", callback_data="start"),
+                InlineKeyboardButton("📖 ʜᴇʟᴘ", callback_data="help"),
+                InlineKeyboardButton("✖️ ᴄʟᴏꜱᴇ", callback_data="close")
+            ],
             [InlineKeyboardButton("👨‍💻 ᴅᴇᴠᴇʟᴏᴘᴇʀ", url="https://t.me/FLiX_LY")]
         ]
     return text, InlineKeyboardMarkup(btns)
@@ -51,14 +50,13 @@ def show_nav(page: str, user_mention: str, bot_name: str, bot_username: str):
 @Client.on_message(filters.command("start") & filters.private, group=1)
 async def start_command(client: Client, message: Message):
     user = message.from_user
-    bot_info = Config.BOT_INFO 
+    me   = await client.get_me()
 
-    # 1. Register User & Log to Admin Chat
     is_new = await db.register_user_on_start({
-        "user_id": str(user.id),
-        "username": user.username or "",
+        "user_id":    str(user.id),
+        "username":   user.username or "",
         "first_name": user.first_name or "",
-        "last_name": user.last_name or "",
+        "last_name":  user.last_name or "",
     })
 
     if is_new and Config.LOGS_CHAT_ID:
@@ -78,9 +76,8 @@ async def start_command(client: Client, message: Message):
         except Exception as exc:
             logger.error("failed to log new user: %s", exc)
 
-    # 2. Deep Link Logic
     if len(message.command) > 1:
-        arg = message.command[1]
+        arg       = message.command[1]
         file_hash = arg.replace("file_", "")
 
         if Config.get("fsub_mode", False):
@@ -97,13 +94,13 @@ async def start_command(client: Client, message: Message):
                 )
                 return
 
-            base_url = Config.URL or f"http://localhost:{Config.PORT}"
-            stream_link = f"{base_url}/stream/{file_hash}"
+            base_url      = Config.URL or f"http://localhost:{Config.PORT}"
+            stream_link   = f"{base_url}/stream/{file_hash}"
             download_link = f"{base_url}/dl/{file_hash}"
 
-            file_type = file_data.get("file_type", "document")
+            file_type     = file_data.get("file_type", "document")
             is_streamable = file_type in ("video", "audio")
-            
+
             text = (
                 "**✅ ꜰɪʟᴇ ꜰᴏᴜɴᴅ!**\n\n"
                 f"**📂 ɴᴀᴍᴇ:** `{escape_markdown(file_data['file_name'])}`\n"
@@ -127,7 +124,7 @@ async def start_command(client: Client, message: Message):
                 text=text,
                 reply_markup=InlineKeyboardMarkup(btn_rows),
                 reply_to_message_id=message.id,
-                disable_web_page_preview=True
+                disable_web_page_preview=True,
             )
             return
 
@@ -140,46 +137,45 @@ async def start_command(client: Client, message: Message):
             )
             return
 
-    # 3. Standard Start Message
-    text, buttons = show_nav("start", user.mention, bot_info.first_name, bot_info.username)
+    text, buttons = show_nav("start", user.mention, me.first_name, me.username)
     if Config.Start_IMG:
         await client.send_photo(
             chat_id=message.chat.id,
             photo=Config.Start_IMG,
             caption=text,
             reply_markup=buttons,
-            reply_to_message_id=message.id
+            reply_to_message_id=message.id,
         )
     else:
         await client.send_message(
             chat_id=message.chat.id,
             text=text,
             reply_markup=buttons,
-            reply_to_message_id=message.id
+            reply_to_message_id=message.id,
         )
 
 
 @Client.on_message(filters.command("help") & filters.private, group=1)
 async def help_command(client: Client, message: Message):
-    bot_info = Config.BOT_INFO
-    text, buttons = show_nav("help", message.from_user.mention, bot_info.first_name, bot_info.username)
+    me = await client.get_me()
+    text, buttons = show_nav("help", message.from_user.mention, me.first_name, me.username)
     await client.send_message(
         chat_id=message.chat.id,
         text=text,
         reply_markup=buttons,
-        reply_to_message_id=message.id
+        reply_to_message_id=message.id,
     )
 
 
 @Client.on_message(filters.command("about") & filters.private, group=1)
 async def about_command(client: Client, message: Message):
-    bot_info = Config.BOT_INFO
-    text, buttons = show_nav("about", message.from_user.mention, bot_info.first_name, bot_info.username)
+    me = await client.get_me()
+    text, buttons = show_nav("about", message.from_user.mention, me.first_name, me.username)
     await client.send_message(
         chat_id=message.chat.id,
         text=text,
         reply_markup=buttons,
-        reply_to_message_id=message.id
+        reply_to_message_id=message.id,
     )
 
 
@@ -191,9 +187,9 @@ async def info_command(client: Client, message: Message):
             target_user = await client.get_users(user_input)
         except Exception:
             return await client.send_message(
-                chat_id=message.chat.id, 
-                text="**❌ ᴜꜱᴇʀ ɴᴏᴛ ꜰᴏᴜɴᴅ ɪɴ ᴍʏ ᴅᴀᴛᴀʙᴀꜱᴇ.**", 
-                reply_to_message_id=message.id
+                chat_id=message.chat.id,
+                text="**❌ ᴜꜱᴇʀ ɴᴏᴛ ꜰᴏᴜɴᴅ ɪɴ ᴍʏ ᴅᴀᴛᴀʙᴀꜱᴇ.**",
+                reply_to_message_id=message.id,
             )
     elif message.reply_to_message:
         target_user = message.reply_to_message.from_user
@@ -209,9 +205,9 @@ async def info_command(client: Client, message: Message):
         f"**🛰 ᴘᴇʀᴍᴀɴᴇɴᴛ ʟɪɴᴋ:** [ᴄʟɪᴄᴋ ʜᴇʀᴇ](tg://user?id={target_user.id})"
     )
     await client.send_message(
-        chat_id=message.chat.id, 
-        text=info_text, 
-        reply_to_message_id=message.id
+        chat_id=message.chat.id,
+        text=info_text,
+        reply_to_message_id=message.id,
     )
 
 
@@ -221,9 +217,9 @@ async def cb_handler(client: Client, query: CallbackQuery):
         await query.message.delete()
         return await query.answer("ᴄʟᴏꜱᴇᴅ")
 
-    bot_info = Config.BOT_INFO
-    text, markup = show_nav(query.data, query.from_user.mention, bot_info.first_name, bot_info.username)
-    
+    me = await client.get_me()
+    text, markup = show_nav(query.data, query.from_user.mention, me.first_name, me.username)
+
     try:
         if query.message.photo:
             await query.message.edit_caption(caption=text, reply_markup=markup)

@@ -1,9 +1,11 @@
 from motor.motor_asyncio import AsyncIOMotorClient
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 import logging
 
 logger = logging.getLogger(__name__)
+
+MONTHLY_CYCLE = 30  # days
 
 
 class Database:
@@ -16,12 +18,14 @@ class Database:
             waitQueueTimeoutMS=5000,
             serverSelectionTimeoutMS=5000,
         )
-        self.db         = self.client[database_name]
-        self.files      = self.db.files
-        self.users      = self.db.users
-        self.bandwidth  = self.db.bandwidth
-        self.sudo_users = self.db.sudo_users
-        self.config     = self.db.config
+        self.db          = self.client[database_name]
+        self.files       = self.db.files
+        self.users       = self.db.users
+        self.bandwidth   = self.db.bandwidth
+        self.sudo_users  = self.db.sudo_users
+        self.banned_users = self.db.banned_users
+        self.config      = self.db.config
+        self.audit_log   = self.db.audit_log
 
     async def init_db(self):
         try:
@@ -53,11 +57,23 @@ class Database:
             if 'user_id' not in sudo_idx:
                 await self.sudo_users.create_index('user_id', unique=True)
 
-            logger.info("✅ ᴅʙ ɪɴᴅᴇxᴇꜱ ʀᴇᴀᴅˏ ᴀʟʟ ɪɴꜱᴛᴀɴᴛ — ꜱᴄɪᴘᴘᴇᴅ ɴᴇᴡ ᴄʀᴇᴀᴛɪᴏɴ ᴏɴʟˏ")
+            ban_idx = await _existing(self.banned_users)
+            if 'user_id' not in ban_idx:
+                await self.banned_users.create_index('user_id', unique=True)
+
+            log_idx = await _existing(self.audit_log)
+            if 'created_at' not in log_idx:
+                await self.audit_log.create_index('created_at')
+            if 'action' not in log_idx:
+                await self.audit_log.create_index('action')
+
+            logger.info("✅ DB indexes ready")
             return True
         except Exception as e:
-            logger.error("❌ ᴅʙ ɪɴɪᴛ ᴇʀʀᴏʀ: %s", e)
+            logger.error("DB init error: %s", e)
             return False
+
+    # ── Files ────────────────────────────────────────────────────────────────
 
     async def add_file(self, file_data: Dict) -> bool:
         try:
@@ -145,16 +161,39 @@ class Database:
             logger.error("delete user files error: %s", e)
             return 0
 
+    # ── Global Bandwidth (monthly cycle) ────────────────────────────────────
+
+    async def _get_global_bw_doc(self) -> Dict:
+        doc = await self.bandwidth.find_one({"_id": "global"})
+        if not doc:
+            now = datetime.utcnow()
+            doc = {
+                "_id":        "global",
+                "total_bytes": 0,
+                "cycle_start": now,
+                "last_updated": now,
+            }
+            await self.bandwidth.insert_one(doc)
+        return doc
+
+    async def _maybe_reset_global_bw(self, doc: Dict) -> Dict:
+        cycle_start = doc.get("cycle_start", datetime.utcnow())
+        if (datetime.utcnow() - cycle_start).days >= MONTHLY_CYCLE:
+            now = datetime.utcnow()
+            await self.bandwidth.update_one(
+                {"_id": "global"},
+                {"$set": {"total_bytes": 0, "cycle_start": now, "last_updated": now}},
+            )
+            doc = {"_id": "global", "total_bytes": 0, "cycle_start": now, "last_updated": now}
+        return doc
+
     async def update_bandwidth(self, size: int) -> bool:
         try:
-            today = datetime.utcnow().date().isoformat()
+            doc = await self._get_global_bw_doc()
+            doc = await self._maybe_reset_global_bw(doc)
             await self.bandwidth.update_one(
-                {"date": today},
-                {
-                    "$inc": {"total_bytes": size},
-                    "$set": {"last_updated": datetime.utcnow()},
-                },
-                upsert=True,
+                {"_id": "global"},
+                {"$inc": {"total_bytes": size}, "$set": {"last_updated": datetime.utcnow()}},
             )
             return True
         except Exception as e:
@@ -175,12 +214,97 @@ class Database:
 
     async def reset_bandwidth(self) -> bool:
         try:
-            await self.bandwidth.delete_many({})
+            now = datetime.utcnow()
+            await self.bandwidth.update_one(
+                {"_id": "global"},
+                {"$set": {"total_bytes": 0, "cycle_start": now, "last_updated": now}},
+                upsert=True,
+            )
             await self.files.update_many({}, {"$set": {"bandwidth_used": 0}})
             return True
         except Exception as e:
             logger.error("reset bandwidth error: %s", e)
             return False
+
+    async def get_total_bandwidth(self) -> int:
+        try:
+            doc = await self._get_global_bw_doc()
+            doc = await self._maybe_reset_global_bw(doc)
+            return doc.get("total_bytes", 0)
+        except Exception as e:
+            logger.error("get total bandwidth error: %s", e)
+            return 0
+
+    async def get_bandwidth_stats(self) -> Dict:
+        try:
+            doc        = await self._get_global_bw_doc()
+            doc        = await self._maybe_reset_global_bw(doc)
+            total      = doc.get("total_bytes", 0)
+            cycle_start = doc.get("cycle_start", datetime.utcnow())
+            elapsed    = (datetime.utcnow() - cycle_start).days
+            days_left  = max(0, MONTHLY_CYCLE - elapsed)
+            return {
+                "total_bandwidth": total,
+                "today_bandwidth": total,
+                "cycle_start":     cycle_start,
+                "days_left":       days_left,
+            }
+        except Exception as e:
+            logger.error("get bandwidth stats error: %s", e)
+            return {"total_bandwidth": 0, "today_bandwidth": 0, "cycle_start": datetime.utcnow(), "days_left": 30}
+
+    # ── Per-User Bandwidth (monthly cycle) ───────────────────────────────────
+
+    async def get_user_bw_doc(self, user_id: str) -> Dict:
+        try:
+            doc = await self.users.find_one({"user_id": user_id})
+            if not doc:
+                return {"bw_used": 0, "bw_cycle_start": datetime.utcnow()}
+            return doc
+        except Exception as e:
+            logger.error("get user bw doc error: %s", e)
+            return {"bw_used": 0, "bw_cycle_start": datetime.utcnow()}
+
+    async def update_user_bandwidth(self, user_id: str, size: int) -> bool:
+        try:
+            doc = await self.users.find_one({"user_id": user_id})
+            if not doc:
+                return False
+
+            cycle_start = doc.get("bw_cycle_start", datetime.utcnow())
+            if (datetime.utcnow() - cycle_start).days >= MONTHLY_CYCLE:
+                await self.users.update_one(
+                    {"user_id": user_id},
+                    {"$set": {"bw_used": size, "bw_cycle_start": datetime.utcnow()}},
+                )
+            else:
+                await self.users.update_one(
+                    {"user_id": user_id},
+                    {"$inc": {"bw_used": size}},
+                )
+            return True
+        except Exception as e:
+            logger.error("update user bandwidth error: %s", e)
+            return False
+
+    async def get_user_bandwidth(self, user_id: str) -> Dict:
+        try:
+            doc = await self.users.find_one({"user_id": user_id})
+            if not doc:
+                return {"bw_used": 0, "bw_cycle_start": datetime.utcnow()}
+            cycle_start = doc.get("bw_cycle_start", datetime.utcnow())
+            if (datetime.utcnow() - cycle_start).days >= MONTHLY_CYCLE:
+                await self.users.update_one(
+                    {"user_id": user_id},
+                    {"$set": {"bw_used": 0, "bw_cycle_start": datetime.utcnow()}},
+                )
+                return {"bw_used": 0, "bw_cycle_start": datetime.utcnow()}
+            return {"bw_used": doc.get("bw_used", 0), "bw_cycle_start": cycle_start}
+        except Exception as e:
+            logger.error("get user bandwidth error: %s", e)
+            return {"bw_used": 0, "bw_cycle_start": datetime.utcnow()}
+
+    # ── Users ─────────────────────────────────────────────────────────────────
 
     async def register_user_on_start(self, user_data: Dict) -> bool:
         try:
@@ -190,20 +314,22 @@ class Database:
                     {"user_id": user_data["user_id"]},
                     {"$set": {"last_activity": datetime.utcnow()}},
                 )
-                return False  # not new
+                return False
 
             await self.users.insert_one({
-                "user_id":       user_data["user_id"],
-                "username":      user_data.get("username", ""),
-                "first_name":    user_data.get("first_name", ""),
-                "last_name":     user_data.get("last_name", ""),
-                "first_used":    datetime.utcnow(),
-                "last_activity": datetime.utcnow(),
+                "user_id":        user_data["user_id"],
+                "username":       user_data.get("username", ""),
+                "first_name":     user_data.get("first_name", ""),
+                "last_name":      user_data.get("last_name", ""),
+                "first_used":     datetime.utcnow(),
+                "last_activity":  datetime.utcnow(),
+                "bw_used":        0,
+                "bw_cycle_start": datetime.utcnow(),
             })
-            logger.info("👤 ɴᴇᴡ ᴜꜱᴇʀ ʀᴇɢɪꜱᴛᴇʀᴇᴅ: %s", user_data["user_id"])
-            return True  # new user
+            logger.info("new user registered: %s", user_data["user_id"])
+            return True
         except Exception as e:
-            logger.error("❌ ʀᴇɢɪꜱᴛᴇʀ_ᴜꜱᴇʀ_ᴏɴ_ꜱᴛᴀʀᴛ ᴇʀʀᴏʀ: %s", e)
+            logger.error("register_user_on_start error: %s", e)
             return False
 
     async def get_user(self, user_id: str) -> Optional[Dict]:
@@ -213,27 +339,12 @@ class Database:
             logger.error("get user error: %s", e)
             return None
 
-    async def get_total_bandwidth(self) -> int:
+    async def get_user_count(self) -> int:
         try:
-            pipeline = [{"$group": {"_id": None, "total": {"$sum": "$total_bytes"}}}]
-            result   = await self.bandwidth.aggregate(pipeline).to_list(length=1)
-            return result[0]["total"] if result else 0
+            return await self.users.count_documents({})
         except Exception as e:
-            logger.error("get total bandwidth error: %s", e)
+            logger.error("get user count error: %s", e)
             return 0
-
-    async def get_bandwidth_stats(self) -> Dict:
-        try:
-            total       = await self.get_total_bandwidth()
-            today       = datetime.utcnow().date().isoformat()
-            today_stats = await self.bandwidth.find_one({"date": today})
-            return {
-                "total_bandwidth": total,
-                "today_bandwidth": today_stats.get("total_bytes", 0) if today_stats else 0,
-            }
-        except Exception as e:
-            logger.error("get bandwidth stats error: %s", e)
-            return {"total_bandwidth": 0, "today_bandwidth": 0}
 
     async def get_stats(self) -> Dict:
         try:
@@ -253,21 +364,38 @@ class Database:
                 "total_bandwidth": 0, "today_bandwidth": 0,
             }
 
-    async def add_sudo_user(self, user_id: str, added_by: str) -> bool:
+    # ── Sudo Users ────────────────────────────────────────────────────────────
+
+    async def add_sudo_user(self, user_id: str, added_by: str, username: str = "", first_name: str = "") -> bool:
         try:
+            now = datetime.utcnow()
             await self.sudo_users.update_one(
                 {"user_id": user_id},
-                {"$set": {"user_id": user_id, "added_by": added_by, "added_at": datetime.utcnow()}},
+                {"$set": {
+                    "user_id":    user_id,
+                    "added_by":   added_by,
+                    "added_at":   now,
+                    "username":   username,
+                    "first_name": first_name,
+                }},
                 upsert=True,
             )
+            await self._log_action("sudo_add", actor=added_by, target=user_id, username=username, first_name=first_name)
             return True
         except Exception as e:
             logger.error("add sudo user error: %s", e)
             return False
 
-    async def remove_sudo_user(self, user_id: str) -> bool:
+    async def remove_sudo_user(self, user_id: str, removed_by: str = "") -> bool:
         try:
+            doc = await self.sudo_users.find_one({"user_id": user_id})
             result = await self.sudo_users.delete_one({"user_id": user_id})
+            if result.deleted_count > 0:
+                await self._log_action(
+                    "sudo_remove", actor=removed_by, target=user_id,
+                    username=doc.get("username", "") if doc else "",
+                    first_name=doc.get("first_name", "") if doc else "",
+                )
             return result.deleted_count > 0
         except Exception as e:
             logger.error("remove sudo user error: %s", e)
@@ -283,18 +411,97 @@ class Database:
 
     async def get_sudo_users(self) -> List[Dict]:
         try:
-            cursor = self.sudo_users.find({})
+            cursor = self.sudo_users.find({}).sort("added_at", -1)
             return await cursor.to_list(length=None)
         except Exception as e:
             logger.error("get sudo users error: %s", e)
             return []
 
-    async def get_user_count(self) -> int:
+    # ── Ban System ────────────────────────────────────────────────────────────
+
+    async def ban_user(self, user_id: str, banned_by: str, reason: str, username: str = "", first_name: str = "") -> bool:
         try:
-            return await self.users.count_documents({})
+            now = datetime.utcnow()
+            await self.banned_users.update_one(
+                {"user_id": user_id},
+                {"$set": {
+                    "user_id":    user_id,
+                    "banned_by":  banned_by,
+                    "reason":     reason,
+                    "banned_at":  now,
+                    "username":   username,
+                    "first_name": first_name,
+                }},
+                upsert=True,
+            )
+            await self._log_action("ban", actor=banned_by, target=user_id, reason=reason, username=username, first_name=first_name)
+            return True
         except Exception as e:
-            logger.error("get user count error: %s", e)
-            return 0
+            logger.error("ban user error: %s", e)
+            return False
+
+    async def unban_user(self, user_id: str, unbanned_by: str) -> bool:
+        try:
+            doc = await self.banned_users.find_one({"user_id": user_id})
+            result = await self.banned_users.delete_one({"user_id": user_id})
+            if result.deleted_count > 0:
+                await self._log_action(
+                    "unban", actor=unbanned_by, target=user_id,
+                    username=doc.get("username", "") if doc else "",
+                    first_name=doc.get("first_name", "") if doc else "",
+                )
+            return result.deleted_count > 0
+        except Exception as e:
+            logger.error("unban user error: %s", e)
+            return False
+
+    async def is_banned(self, user_id: str) -> bool:
+        try:
+            result = await self.banned_users.find_one({"user_id": user_id})
+            return result is not None
+        except Exception as e:
+            logger.error("is banned error: %s", e)
+            return False
+
+    async def get_ban_info(self, user_id: str) -> Optional[Dict]:
+        try:
+            return await self.banned_users.find_one({"user_id": user_id})
+        except Exception as e:
+            logger.error("get ban info error: %s", e)
+            return None
+
+    async def get_banned_users(self) -> List[Dict]:
+        try:
+            cursor = self.banned_users.find({}).sort("banned_at", -1)
+            return await cursor.to_list(length=None)
+        except Exception as e:
+            logger.error("get banned users error: %s", e)
+            return []
+
+    # ── Audit Log ─────────────────────────────────────────────────────────────
+
+    async def _log_action(self, action: str, actor: str, target: str, reason: str = "", username: str = "", first_name: str = "") -> None:
+        try:
+            await self.audit_log.insert_one({
+                "action":     action,
+                "actor":      actor,
+                "target":     target,
+                "reason":     reason,
+                "username":   username,
+                "first_name": first_name,
+                "created_at": datetime.utcnow(),
+            })
+        except Exception as e:
+            logger.error("log action error: %s", e)
+
+    async def get_audit_log(self, action: str = None, limit: int = 20) -> List[Dict]:
+        try:
+            query = {"action": action} if action else {}
+            cursor = self.audit_log.find(query).sort("created_at", -1).limit(limit)
+            return await cursor.to_list(length=limit)
+        except Exception as e:
+            logger.error("get audit log error: %s", e)
+            return []
 
     async def close(self):
         self.client.close()

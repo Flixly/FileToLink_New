@@ -13,13 +13,20 @@ from pyrogram.types import (
 )
 
 from config import Config
-from helper import Cryptic, format_size, escape_markdown, small_caps, check_fsub, check_owner
+from helper import (
+    Cryptic, format_size, escape_markdown, small_caps, check_fsub, check_owner,
+    check_user_bandwidth, should_warn_user,
+)
 from database import db
 
 logger = logging.getLogger(__name__)
 
 STREAMABLE_TYPES = ("video", "audio")
 PAGE_SIZE = 10
+
+
+def _is_privileged(user_id: int) -> bool:
+    return user_id in Config.OWNER_ID
 
 
 async def check_access(user_id: int) -> bool:
@@ -30,6 +37,24 @@ async def check_access(user_id: int) -> bool:
     return await db.is_sudo_user(str(user_id))
 
 
+async def _enforce_ban(client: Client, message: Message) -> bool:
+    user_id = str(message.from_user.id)
+    if await db.is_banned(user_id):
+        ban_info = await db.get_ban_info(user_id)
+        reason   = ban_info.get("reason", "—") if ban_info else "—"
+        await client.send_message(
+            chat_id=message.chat.id,
+            text=(
+                f"🚫 **{small_caps('access denied')}**\n\n"
+                f"ʏᴏᴜ ᴀʀᴇ ʙᴀɴɴᴇᴅ ꜰʀᴏᴍ ᴜꜱɪɴɢ ᴛʜɪꜱ ʙᴏᴛ.\n\n"
+                f"**{small_caps('reason')}:** {reason}"
+            ),
+            reply_to_message_id=message.id,
+        )
+        return True
+    return False
+
+
 @Client.on_message(
     (filters.document | filters.video | filters.audio | filters.photo) & filters.private,
     group=0,
@@ -37,6 +62,10 @@ async def check_access(user_id: int) -> bool:
 async def file_handler(client: Client, message: Message):
     user    = message.from_user
     user_id = user.id
+    privileged = _is_privileged(user_id)
+
+    if await _enforce_ban(client, message):
+        return
 
     if Config.get("fsub_mode", False):
         if not await check_fsub(client, message):
@@ -51,19 +80,37 @@ async def file_handler(client: Client, message: Message):
         )
         return
 
-    stats         = await db.get_bandwidth_stats()
-    max_bandwidth = Config.get("max_bandwidth", 107374182400)
-    if Config.get("bandwidth_mode", True) and stats["total_bandwidth"] >= max_bandwidth:
-        await client.send_message(
-            chat_id=message.chat.id,
-            text=(
-                f"❌ **{small_caps('bandwidth limit reached')}!**\n\n"
-                "ᴘʟᴇᴀꜱᴇ ᴄᴏɴᴛᴀᴄᴛ ᴛʜᴇ ᴀᴅᴍɪɴɪꜱᴛʀᴀᴛᴏʀ."
-            ),
-            reply_to_message_id=message.id,
-            disable_web_page_preview=True,
-        )
-        return
+    if Config.get("bandwidth_mode", True) and not privileged:
+        stats = await db.get_bandwidth_stats()
+        max_bandwidth = Config.get("max_bandwidth", 107374182400)
+        if max_bandwidth and stats["total_bandwidth"] >= max_bandwidth:
+            await client.send_message(
+                chat_id=message.chat.id,
+                text=(
+                    f"❌ **{small_caps('bandwidth limit reached')}!**\n\n"
+                    "ᴘʟᴇᴀꜱᴇ ᴄᴏɴᴛᴀᴄᴛ ᴛʜᴇ ᴀᴅᴍɪɴɪꜱᴛʀᴀᴛᴏʀ."
+                ),
+                reply_to_message_id=message.id,
+                disable_web_page_preview=True,
+            )
+            return
+
+        ok, user_bw = await check_user_bandwidth(db, str(user_id), is_privileged=False)
+        if not ok:
+            max_user_bw = Config.get("max_user_bandwidth", 0)
+            days_left   = (await db.get_bandwidth_stats()).get("days_left", 30)
+            await client.send_message(
+                chat_id=message.chat.id,
+                text=(
+                    f"❌ **{small_caps('personal bandwidth limit reached')}!**\n\n"
+                    f"📤 **{small_caps('used')}:** `{format_size(user_bw.get('bw_used', 0))}`\n"
+                    f"📊 **{small_caps('limit')}:** `{format_size(max_user_bw)}`\n"
+                    f"🔄 **{small_caps('resets in')}:** `{days_left}` ᴅᴀʏꜱ"
+                ),
+                reply_to_message_id=message.id,
+                disable_web_page_preview=True,
+            )
+            return
 
     if message.document:
         file       = message.document
@@ -147,8 +194,7 @@ async def file_handler(client: Client, message: Message):
             pass
         await processing_msg.edit_text(
             f"❌ **{small_caps('file processing failed')}**\n\n"
-            "ꜰɪʟᴇ ᴄᴏᴜʟᴅ ɴᴏᴛ ʙᴇ ʀᴇᴀᴅ ꜰʀᴏᴍ ᴛᴇʟᴇɢʀᴀᴍ ᴀꜰᴛᴇʀ ꜰᴏʀᴡᴀʀᴅɪɴɢ.\n"
-            "ᴛʜɪꜱ ᴜꜱᴜᴀʟʟʏ ʜᴀᴘᴘᴇɴꜱ ᴡɪᴛʜ ᴠᴇʀʏ ʟᴀʀɢᴇ ꜰɪʟᴇꜱ. ᴘʟᴇᴀꜱᴇ ᴛʀʏ ᴀɢᴀɪɴ.",
+            "ꜰɪʟᴇ ᴄᴏᴜʟᴅ ɴᴏᴛ ʙᴇ ʀᴇᴀᴅ ꜰʀᴏᴍ ᴛᴇʟᴇɢʀᴀᴍ ᴀꜰᴛᴇʀ ꜰᴏʀᴡᴀʀᴅɪɴɢ.",
         )
         return
 
@@ -221,6 +267,24 @@ async def file_handler(client: Client, message: Message):
         text,
         reply_markup=InlineKeyboardMarkup(buttons),
     )
+
+    if not privileged and Config.get("bandwidth_mode", True):
+        max_user_bw = Config.get("max_user_bandwidth", 0)
+        if max_user_bw:
+            _, user_bw = await check_user_bandwidth(db, str(user_id), is_privileged=False)
+            if should_warn_user(user_bw):
+                used      = user_bw.get("bw_used", 0)
+                days_left = (await db.get_bandwidth_stats()).get("days_left", 30)
+                await client.send_message(
+                    chat_id=message.chat.id,
+                    text=(
+                        f"⚠️ **{small_caps('bandwidth warning')}**\n\n"
+                        f"ʏᴏᴜ ᴀʀᴇ ᴀᴘᴘʀᴏᴀᴄʜɪɴɢ ʏᴏᴜʀ ᴍᴏɴᴛʜʟʏ ʟɪᴍɪᴛ.\n"
+                        f"📤 **{small_caps('used')}:** `{format_size(used)}`\n"
+                        f"📊 **{small_caps('limit')}:** `{format_size(max_user_bw)}`\n"
+                        f"🔄 **{small_caps('resets in')}:** `{days_left}` ᴅᴀʏꜱ"
+                    ),
+                )
 
 
 @Client.on_message(filters.command("files") & filters.private, group=0)
@@ -302,12 +366,7 @@ async def files_command(client: Client, message: Message):
     )
 
 
-async def _build_user_files_markup(
-    client,
-    user_id: str,
-    page: int,
-    owner_view: bool,
-) -> tuple:
+async def _build_user_files_markup(client, user_id: str, page: int, owner_view: bool) -> tuple:
     skip           = (page - 1) * PAGE_SIZE
     user_files_cur, total_files = await db.find_files(user_id, [skip + 1, PAGE_SIZE])
 
@@ -337,9 +396,7 @@ async def _build_user_files_markup(
         else:
             nav.append(InlineKeyboardButton("◄", callback_data="N/A"))
 
-        nav.append(InlineKeyboardButton(
-            f"{page}/{total_pages}", callback_data="N/A"
-        ))
+        nav.append(InlineKeyboardButton(f"{page}/{total_pages}", callback_data="N/A"))
 
         if page < total_pages:
             next_cb = (
@@ -405,7 +462,6 @@ async def cb_owner_files_page(client: Client, callback: CallbackQuery):
     if not await check_owner(client, callback):
         return
 
-    # Format: ownfiles_<user_id>_<page>
     parts     = callback.data.split("_", 2)
     target_id = parts[1]
     page      = int(parts[2]) if len(parts) > 2 else 1
@@ -422,7 +478,6 @@ async def cb_owner_files_page(client: Client, callback: CallbackQuery):
 
 @Client.on_callback_query(filters.regex(r"^myfile_"), group=0)
 async def cb_user_file_detail(client: Client, callback: CallbackQuery):
-    # Format: myfile_<_id_hex>_<page>
     parts     = callback.data.split("_", 2)
     oid_str   = parts[1]
     back_page = int(parts[2]) if len(parts) > 2 else 1
@@ -492,7 +547,6 @@ async def cb_owner_file_detail(client: Client, callback: CallbackQuery):
     if not await check_owner(client, callback):
         return
 
-    # Format: ownview_<message_id>_<target_user_id>
     parts      = callback.data.split("_", 2)
     message_id = parts[1]
     target_id  = parts[2] if len(parts) > 2 else ""
@@ -508,7 +562,8 @@ async def cb_owner_file_detail(client: Client, callback: CallbackQuery):
     base_url      = Config.URL or f"http://localhost:{Config.PORT}"
     stream_link   = f"{base_url}/stream/{file_hash}"
     download_link = f"{base_url}/dl/{file_hash}"
-    telegram_link = f"https://t.me/{(await client.get_me()).username}?start=file_{file_hash}"
+    me            = await client.get_me()
+    telegram_link = f"https://t.me/{me.username}?start=file_{file_hash}"
 
     safe_name      = escape_markdown(file_data["file_name"])
     formatted_size = format_size(file_data["file_size"])
@@ -525,9 +580,7 @@ async def cb_owner_file_detail(client: Client, callback: CallbackQuery):
         ])
 
     buttons = link_buttons + [
-        [
-            InlineKeyboardButton(f"💬 {small_caps('telegram')}", url=telegram_link),
-        ],
+        [InlineKeyboardButton(f"💬 {small_caps('telegram')}", url=telegram_link)],
         [InlineKeyboardButton(
             f"🗑️ {small_caps('revoke this file')}",
             callback_data=f"ownrevoke_{file_hash}_{target_id}",
@@ -555,7 +608,6 @@ async def cb_owner_revoke_confirm(client: Client, callback: CallbackQuery):
     if not await check_owner(client, callback):
         return
 
-    # Format: ownrevoke_<file_hash>_<target_user_id>
     raw       = callback.data[len("ownrevoke_"):]
     parts     = raw.split("_", 1)
     file_hash = parts[0]
@@ -571,8 +623,7 @@ async def cb_owner_revoke_confirm(client: Client, callback: CallbackQuery):
         f"⚠️ **{small_caps('confirm revoke')}**\n\n"
         f"🚫 ᴀʀᴇ ʏᴏᴜ ꜱᴜʀᴇ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ **ᴘᴇʀᴍᴀɴᴇɴᴛʟʏ ʀᴇᴠᴏᴋᴇ ᴀᴄᴄᴇꜱꜱ** ᴛᴏ ᴛʜɪꜱ ꜰɪʟᴇ?\n\n"
         f"📂 **{small_caps('file')}:** `{safe_name}`\n\n"
-        "⚠️ **ᴛʜɪꜱ ᴀᴄᴛɪᴏɴ ᴄᴀɴɴᴏᴛ ʙᴇ ᴜɴᴅᴏɴᴇ.**\n"
-        "ᴀʟʟ ꜱᴛʀᴇᴀᴍ ᴀɴᴅ ᴅᴏᴡɴʟᴏᴀᴅ ʟɪɴᴋꜱ ꜰᴏʀ ᴛʜɪꜱ ꜰɪʟᴇ ᴡɪʟʟ ʙᴇᴄᴏᴍᴇ ɪɴᴠᴀʟɪᴅ ɪᴍᴍᴇᴅɪᴀᴛᴇʟʏ.",
+        "⚠️ **ᴛʜɪꜱ ᴀᴄᴛɪᴏɴ ᴄᴀɴɴᴏᴛ ʙᴇ ᴜɴᴅᴏɴᴇ.**",
         reply_markup=InlineKeyboardMarkup([
             [
                 InlineKeyboardButton(f"✅ {small_caps('yes, revoke')}", callback_data=f"ownrevoke_yes_{file_hash}_{target_id}"),
@@ -588,7 +639,6 @@ async def cb_owner_revoke_yes(client: Client, callback: CallbackQuery):
     if not await check_owner(client, callback):
         return
 
-    # Format: ownrevoke_yes_<file_hash>_<target_user_id>
     raw       = callback.data[len("ownrevoke_yes_"):]
     parts     = raw.split("_", 1)
     file_hash = parts[0]
@@ -610,8 +660,7 @@ async def cb_owner_revoke_yes(client: Client, callback: CallbackQuery):
     await callback.message.edit_text(
         f"🚫 **{small_caps('access revoked')}**\n\n"
         f"📂 **{small_caps('file')}:** `{safe_name}`\n\n"
-        f"✅ **{small_caps('revoke successful')}** — ᴀᴄᴄᴇꜱꜱ ᴛᴏ ᴛʜɪꜱ ꜰɪʟᴇ ʜᴀꜱ ʙᴇᴇɴ ᴘᴇʀᴍᴀɴᴇɴᴛʟʏ ʀᴇᴠᴏᴋᴇᴅ.\n"
-        "ᴀʟʟ ꜱᴛʀᴇᴀᴍ ᴀɴᴅ ᴅᴏᴡɴʟᴏᴀᴅ ʟɪɴᴋꜱ ꜰᴏʀ ᴛʜɪꜱ ꜰɪʟᴇ ᴀʀᴇ ɴᴏᴡ ɪɴᴠᴀʟɪᴅ.",
+        f"✅ ᴀᴄᴄᴇꜱꜱ ᴛᴏ ᴛʜɪꜱ ꜰɪʟᴇ ʜᴀꜱ ʙᴇᴇɴ ᴘᴇʀᴍᴀɴᴇɴᴛʟʏ ʀᴇᴠᴏᴋᴇᴅ.",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton(
                 f"⬅️ {small_caps('back to user files')}",
@@ -654,14 +703,8 @@ async def cb_owner_back(client: Client, callback: CallbackQuery):
     await callback.answer()
 
 
-# NOTE: The /revoke command (admin.py) also routes to this handler via the
-#       shared callback_data prefix "revoke_<file_hash>".  Both the inline
-#       Revoke button and the /revoke command emit the same pattern so
-#       confirmation and execution are handled in one place.
 @Client.on_callback_query(filters.regex(r"^revoke_(?!yes_|no_)"), group=0)
 async def cb_revoke_confirm(client: Client, callback: CallbackQuery):
-    # Format (from file detail): revoke_<file_hash>_<back_page>
-    # Format (from /revoke cmd): revoke_<file_hash>   (no back_page)
     raw       = callback.data[len("revoke_"):]
     parts     = raw.split("_", 1)
     file_hash = parts[0]
@@ -677,8 +720,7 @@ async def cb_revoke_confirm(client: Client, callback: CallbackQuery):
         f"⚠️ **{small_caps('confirm revoke')}**\n\n"
         f"🚫 ᴀʀᴇ ʏᴏᴜ ꜱᴜʀᴇ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ **ᴘᴇʀᴍᴀɴᴇɴᴛʟʏ ʀᴇᴠᴏᴋᴇ ᴀᴄᴄᴇꜱꜱ** ᴛᴏ ᴛʜɪꜱ ꜰɪʟᴇ?\n\n"
         f"📂 **{small_caps('file')}:** `{safe_name}`\n\n"
-        "⚠️ **ᴛʜɪꜱ ᴀᴄᴛɪᴏɴ ᴄᴀɴɴᴏᴛ ʙᴇ ᴜɴᴅᴏɴᴇ.**\n"
-        "ᴀʟʟ ꜱᴛʀᴇᴀᴍ ᴀɴᴅ ᴅᴏᴡɴʟᴏᴀᴅ ʟɪɴᴋꜱ ꜰᴏʀ ᴛʜɪꜱ ꜰɪʟᴇ ᴡɪʟʟ ʙᴇᴄᴏᴍᴇ ɪɴᴠᴀʟɪᴅ ɪᴍᴍᴇᴅɪᴀᴛᴇʟʏ.",
+        "⚠️ **ᴛʜɪꜱ ᴀᴄᴛɪᴏɴ ᴄᴀɴɴᴏᴛ ʙᴇ ᴜɴᴅᴏɴᴇ.**",
         reply_markup=InlineKeyboardMarkup([
             [
                 InlineKeyboardButton(f"✅ {small_caps('yes, revoke')}", callback_data=f"revoke_yes_{file_hash}_{back_page}"),
@@ -691,7 +733,6 @@ async def cb_revoke_confirm(client: Client, callback: CallbackQuery):
 
 @Client.on_callback_query(filters.regex(r"^revoke_yes_"), group=0)
 async def cb_revoke_yes(client: Client, callback: CallbackQuery):
-    # Format: revoke_yes_<file_hash>_<back_page>
     raw       = callback.data[len("revoke_yes_"):]
     parts     = raw.split("_", 1)
     file_hash = parts[0]
@@ -712,8 +753,7 @@ async def cb_revoke_yes(client: Client, callback: CallbackQuery):
     await callback.message.edit_text(
         f"🚫 **{small_caps('access revoked')}**\n\n"
         f"📂 **{small_caps('file')}:** `{safe_name}`\n\n"
-        f"✅ **{small_caps('revoke successful')}** — ᴀᴄᴄᴇꜱꜱ ᴛᴏ ᴛʜɪꜱ ꜰɪʟᴇ ʜᴀꜱ ʙᴇᴇɴ ᴘᴇʀᴍᴀɴᴇɴᴛʟʏ ʀᴇᴠᴏᴋᴇᴅ.\n"
-        "ᴀʟʟ ꜱᴛʀᴇᴀᴍ ᴀɴᴅ ᴅᴏᴡɴʟᴏᴀᴅ ʟɪɴᴋꜱ ꜰᴏʀ ᴛʜɪꜱ ꜰɪʟᴇ ᴀʀᴇ ɴᴏᴡ ɪɴᴠᴀʟɪᴅ.",
+        f"✅ ᴀᴄᴄᴇꜱꜱ ᴛᴏ ᴛʜɪꜱ ꜰɪʟᴇ ʜᴀꜱ ʙᴇᴇɴ ᴘᴇʀᴍᴀɴᴇɴᴛʟʏ ʀᴇᴠᴏᴋᴇᴅ.",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton(f"⬅️ {small_caps('back to files')}", callback_data=f"userfiles_{back_page}")],
         ]),
@@ -797,15 +837,14 @@ async def inline_query_handler(client: Client, inline_query):
     file_hash     = file_data["file_id"]
     stream_link   = f"{base_url}/stream/{file_hash}"
     download_link = f"{base_url}/dl/{file_hash}"
-    bot_username  = (await client.get_me()).username
-    telegram_link = f"https://t.me/{bot_username}?start=file_{file_hash}"
+    me            = await client.get_me()
+    telegram_link = f"https://t.me/{me.username}?start=file_{file_hash}"
     file_type     = file_data.get("file_type", "document")
     is_streamable = file_type in STREAMABLE_TYPES
     safe_name     = escape_markdown(file_data["file_name"])
     fmt_size      = format_size(file_data["file_size"])
     tg_file_id    = file_data.get("telegram_file_id", "")
 
-    # Message layout matches the /start file_<hash> deep-link response.
     text = (
         f"✅ **{small_caps('file found')}!**\n\n"
         f"📂 **{small_caps('name')}:** `{safe_name}`\n"
@@ -813,13 +852,9 @@ async def inline_query_handler(client: Client, inline_query):
         f"📊 **{small_caps('type')}:** `{file_type}`\n\n"
     )
     if is_streamable:
-        text += (
-            f"🎬 **{small_caps('stream link')}:**\n`{stream_link}`"
-        )
+        text += f"🎬 **{small_caps('stream link')}:**\n`{stream_link}`"
     else:
-        text += (
-            f"🔗 **{small_caps('download link')}:**\n`{download_link}`"
-        )
+        text += f"🔗 **{small_caps('download link')}:**\n`{download_link}`"
 
     btn_rows = []
     if is_streamable:

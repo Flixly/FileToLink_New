@@ -451,35 +451,35 @@
     /* ── Bot Avatar Row ─────────────────────────────────────── */
     .bot-avatar-row {
       display: flex; align-items: center; gap: 16px;
-      padding: 18px 22px;
+      padding: 16px 20px;
       background: var(--stat-bg);
-      border-radius: 20px;
+      border-radius: 16px;
       border: 1px solid var(--stat-border);
-      margin-bottom: 26px;
-      flex-wrap: wrap;
+      margin-bottom: 22px;
+      overflow: hidden;
       transition: box-shadow .3s ease;
     }
-    .bot-avatar-row:hover { box-shadow: 0 8px 28px rgba(102,126,234,.14); }
+    .bot-avatar-row:hover { box-shadow: 0 6px 22px rgba(102,126,234,.14); }
     .bot-avatar {
-      width: 56px; height: 56px;
+      width: 52px; height: 52px; min-width: 52px;
       border-radius: 50%;
       background: linear-gradient(135deg,#667eea,#764ba2);
       display: flex; align-items: center; justify-content: center;
-      font-size: 1.5rem; color: #fff; flex-shrink: 0;
+      font-size: 1.4rem; color: #fff; flex-shrink: 0;
       box-shadow: 0 0 0 3px var(--avatar-border);
     }
-    .bot-info-text { flex: 1; min-width: 0; }
+    .bot-info-text { flex: 1; min-width: 0; overflow: hidden; }
     .bot-info-text h3 {
-      font-size: 1rem; font-weight: 800; color: var(--text-primary);
+      font-size: .95rem; font-weight: 800; color: var(--text-primary);
       margin-bottom: 2px;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .bot-info-text span {
-      color: var(--text-label); font-size: .84rem;
+      color: var(--text-label); font-size: .82rem;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
       display: block;
     }
-    .bot-status-badge { flex-shrink: 0; }
+    .bot-status-badge { flex-shrink: 0; margin-left: auto; }
 
     /* ── Buttons ────────────────────────────────────────────── */
     .btn-row {
@@ -708,6 +708,13 @@
               Remaining
             </span>
             <span class="info-value" id="bw-remaining">{{ bw_remaining }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">
+              <span class="il-icon" style="background:rgba(160,140,255,.2)"><i class="fa-solid fa-rotate" style="color:#a78bfa"></i></span>
+              Resets In
+            </span>
+            <span class="info-value" id="bw-days-left">{{ bw_days_left }} days</span>
           </div>
         </div>
 

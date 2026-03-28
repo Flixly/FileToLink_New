@@ -28,14 +28,23 @@ logger = logging.getLogger(__name__)
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 
 
-def _bot_info(bot: Bot) -> dict:
-    me = getattr(bot, "me", None)
-    return {
-        "bot_name":     (me.first_name if me else None) or DEFAULT_BOT_NAME,
-        "bot_username": (me.username   if me else None) or DEFAULT_BOT_USERNAME,
-        "bot_id":       str(me.id)    if me else "N/A",
-        "bot_dc":       str(me.dc_id) if me else "N/A",
-    }
+async def _bot_info(bot: Bot) -> dict:
+    try:
+        me = await bot.get_me()
+        return {
+            "bot_name":     me.first_name or "FileStream Bot",
+            "bot_username": me.username   or "filestream_bot",
+            "bot_id":       str(me.id),
+            "bot_dc":       str(me.dc_id),
+        }
+    except Exception:
+        me = getattr(bot, "me", None)
+        return {
+            "bot_name":     (me.first_name if me else None) or "FileStream Bot",
+            "bot_username": (me.username   if me else None) or "filestream_bot",
+            "bot_id":       str(me.id)    if me else "N/A",
+            "bot_dc":       str(me.dc_id) if me else "N/A",
+        }
 
 
 def build_app(bot: Bot, database) -> web.Application:
@@ -52,7 +61,7 @@ def build_app(bot: Bot, database) -> web.Application:
 
     async def _render_not_found(request: web.Request) -> web.Response:
         try:
-            info = _bot_info(bot)
+            info = await _bot_info(bot)
             return aiohttp_jinja2.render_template(
                 "not_found.html",
                 request,
@@ -64,7 +73,7 @@ def build_app(bot: Bot, database) -> web.Application:
 
     async def _render_bandwidth_exceeded(request: web.Request) -> web.Response:
         try:
-            info = _bot_info(bot)
+            info = await _bot_info(bot)
             return aiohttp_jinja2.render_template(
                 "bandwidth_exceeded.html",
                 request,
@@ -87,7 +96,7 @@ def build_app(bot: Bot, database) -> web.Application:
 
     @aiohttp_jinja2.template("home.html")
     async def home(request: web.Request):
-        info = _bot_info(bot)
+        info = await _bot_info(bot)
         return {
             "bot_name":       info["bot_name"],
             "bot_username":   info["bot_username"],
@@ -95,9 +104,6 @@ def build_app(bot: Bot, database) -> web.Application:
         }
 
     async def _tracked_stream(request: web.Request, file_hash: str, is_download: bool):
-        # One (file_hash, client_ip) pair = one unique session.
-        # Registration is idempotent: repeated range-requests from the same
-        # player only refresh the heartbeat, they never increment the counter.
         client_ip   = _get_client_ip(request)
         session_key = f"{file_hash}:{client_ip}"
         await _register_session(session_key)
@@ -118,8 +124,6 @@ def build_app(bot: Bot, database) -> web.Application:
         if not file_data:
             raise web.HTTPNotFound(reason="File not found")
 
-        # Also verify the file exists in the Flog/dump channel so we can
-        # surface a clean 404 instead of a player error mid-stream.
         try:
             from helper.stream import get_file_ids
             await get_file_ids(bot, str(file_data["message_id"]))
@@ -152,10 +156,7 @@ def build_app(bot: Bot, database) -> web.Application:
         )
         playable = is_browser_playable(mime)
 
-        info = _bot_info(bot)
-        # Build thumbnail URL for the template (used ONLY as metadata for external
-        # players — the built-in web player does NOT display it)
-        # thumbnail_url is used only as OG metadata (no /thumb endpoint)
+        info = await _bot_info(bot)
         thumbnail_url = f"{base}/stream/{file_hash}"
         context = {
             "bot_name":         info["bot_name"],
@@ -183,12 +184,13 @@ def build_app(bot: Bot, database) -> web.Application:
             bw_stats = await database.get_bandwidth_stats()
         except Exception:
             stats    = {"total_users": 0, "total_files": 0}
-            bw_stats = {"total_bandwidth": 0, "today_bandwidth": 0}
+            bw_stats = {"total_bandwidth": 0, "today_bandwidth": 0, "days_left": 30}
 
         max_bw    = Config.get("max_bandwidth", 107374182400)
         bw_mode   = Config.get("bandwidth_mode", True)
         bw_used   = bw_stats["total_bandwidth"]
-        bw_today  = bw_stats["today_bandwidth"]
+        bw_today  = bw_stats.get("today_bandwidth", bw_used)
+        days_left = bw_stats.get("days_left", 30)
         remaining = max(0, max_bw - bw_used)
         bw_pct    = round((bw_used / max_bw * 100) if max_bw else 0, 1)
 
@@ -205,7 +207,7 @@ def build_app(bot: Bot, database) -> web.Application:
         uptime_seconds = time.time() - Config.UPTIME if Config.UPTIME else 0
         uptime_str     = _format_uptime(uptime_seconds)
 
-        info = _bot_info(bot)
+        info = await _bot_info(bot)
 
         return {
             **info,
@@ -222,6 +224,7 @@ def build_app(bot: Bot, database) -> web.Application:
             "bw_today":     format_size(bw_today),
             "bw_remaining": format_size(remaining),
             "bw_pct":       bw_pct,
+            "bw_days_left": days_left,
             "bot_status":   "running" if getattr(bot, "me", None) else "initializing",
             "active_conns": get_active_session_count(),
         }
@@ -252,8 +255,9 @@ def build_app(bot: Bot, database) -> web.Application:
             bw_stats = await database.get_bandwidth_stats()
             max_bw   = Config.get("max_bandwidth", 107374182400)
             bw_used  = bw_stats["total_bandwidth"]
-            bw_today = bw_stats["today_bandwidth"]
+            bw_today = bw_stats.get("today_bandwidth", bw_used)
             bw_pct   = round((bw_used / max_bw * 100) if max_bw else 0, 1)
+            days_left = bw_stats.get("days_left", 30)
 
             try:
                 ram          = psutil.virtual_memory()
@@ -266,16 +270,17 @@ def build_app(bot: Bot, database) -> web.Application:
             uptime_str = _format_uptime(time.time() - Config.UPTIME if Config.UPTIME else 0)
 
             payload = {
-                "total_users": stats.get("total_users", 0),
-                "total_chats": stats.get("total_users", 0),
-                "total_files": stats.get("total_files", 0),
-                "ram_used":    ram_used_fmt,
-                "cpu_pct":     cpu_pct,
-                "uptime":      uptime_str,
-                "bw_pct":      bw_pct,
-                "bw_used":     format_size(bw_used),
-                "bw_today":    format_size(bw_today),
-                "bw_limit":    format_size(max_bw),
+                "total_users":  stats.get("total_users", 0),
+                "total_chats":  stats.get("total_users", 0),
+                "total_files":  stats.get("total_files", 0),
+                "ram_used":     ram_used_fmt,
+                "cpu_pct":      cpu_pct,
+                "uptime":       uptime_str,
+                "bw_pct":       bw_pct,
+                "bw_used":      format_size(bw_used),
+                "bw_today":     format_size(bw_today),
+                "bw_limit":     format_size(max_bw),
+                "bw_days_left": days_left,
             }
             return web.Response(text=json.dumps(payload), content_type="application/json")
         except Exception as exc:
@@ -288,20 +293,23 @@ def build_app(bot: Bot, database) -> web.Application:
             max_bw    = Config.get("max_bandwidth", 107374182400)
             bw_mode   = Config.get("bandwidth_mode", True)
             used      = stats["total_bandwidth"]
-            today     = stats["today_bandwidth"]
+            today     = stats.get("today_bandwidth", used)
+            days_left = stats.get("days_left", 30)
             remaining = max(0, max_bw - used)
             pct       = round((used / max_bw * 100) if max_bw else 0, 1)
             payload = {
-                **stats,
                 "limit":          max_bw,
+                "used":           used,
+                "today":          today,
                 "remaining":      remaining,
                 "percentage":     pct,
                 "bandwidth_mode": bw_mode,
+                "days_left":      days_left,
                 "formatted": {
-                    "total_bandwidth": format_size(used),
-                    "today_bandwidth": format_size(today),
-                    "limit":           format_size(max_bw),
-                    "remaining":       format_size(remaining),
+                    "used":      format_size(used),
+                    "today":     format_size(today),
+                    "limit":     format_size(max_bw),
+                    "remaining": format_size(remaining),
                 },
             }
             return web.Response(text=json.dumps(payload), content_type="application/json")
@@ -311,7 +319,7 @@ def build_app(bot: Bot, database) -> web.Application:
 
     async def api_health(request: web.Request):
         try:
-            info = _bot_info(bot)
+            info = await _bot_info(bot)
             payload = {
                 "status":       "ok",
                 "bot_status":   "running" if getattr(bot, "me", None) else "initializing",

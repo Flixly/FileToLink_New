@@ -19,8 +19,6 @@ class Config:
     FILE_TYPE_IMAGE    = "image"
     FILE_TYPE_DOCUMENT = "document"
 
-    BOT_INFO = None
-
     UPTIME: float = 0.0
 
     OWNER_ID = list(
@@ -50,25 +48,26 @@ class Config:
     async def load(cls, db):
         doc = await db.config.find_one({"key": "Settings"})
         if not doc:
-            logger.warning("⚠️ ᴄᴏɴꜰɪɢ ɴᴏᴛ ꜰᴏᴜɴᴅ ɪɴ ᴅʙ — ᴀᴘᴘʟˏɪɴɢ ꜰʀᴇꜱʜ ᴄᴏɴꜰɪɢ ᴠᴀʟᴜᴇꜱ")
+            logger.warning("config not found in db — applying fresh config values")
             doc = {
-                "key":            "Settings",
-                "fsub_mode":      bool(cls.FSUB_ID),
-                "fsub_chat_id":   cls.FSUB_ID or 0,
-                "fsub_inv_link":  cls.FSUB_INV_LINK or "",
-                "bandwidth_mode": True,
-                "max_bandwidth":  int(os.environ.get("MAX_BANDWIDTH", 107374182400)),
-                "public_bot":     os.environ.get("PUBLIC_BOT", "False").lower() == "true",
-                "max_file_size":  int(os.environ.get("MAX_FILE_SIZE", 4294967296)),
+                "key":               "Settings",
+                "fsub_mode":         bool(cls.FSUB_ID),
+                "fsub_chat_id":      cls.FSUB_ID or 0,
+                "fsub_inv_link":     cls.FSUB_INV_LINK or "",
+                "bandwidth_mode":    True,
+                "max_bandwidth":     int(os.environ.get("MAX_BANDWIDTH", 107374182400)),
+                "max_user_bandwidth": 0,
+                "public_bot":        os.environ.get("PUBLIC_BOT", "False").lower() == "true",
+                "max_file_size":     int(os.environ.get("MAX_FILE_SIZE", 4294967296)),
             }
             await db.config.insert_one(doc)
-            logger.info("✅ ᴄᴏɴꜰɪɢ ᴄʀᴇᴀᴛᴇᴅ & ꜰᴜʟʟˏ ᴛᴜɴᴇᴅ ɪɴ ᴅʙ")
         else:
             defaults = {
-                "bandwidth_mode": True,
-                "fsub_mode":      doc.get("fsub_mode", False),
-                "fsub_chat_id":   doc.get("fsub_chat_id", 0),
-                "fsub_inv_link":  doc.get("fsub_inv_link", ""),
+                "bandwidth_mode":    True,
+                "fsub_mode":         doc.get("fsub_mode", False),
+                "fsub_chat_id":      doc.get("fsub_chat_id", 0),
+                "fsub_inv_link":     doc.get("fsub_inv_link", ""),
+                "max_user_bandwidth": doc.get("max_user_bandwidth", 0),
             }
             missing = {k: v for k, v in defaults.items() if k not in doc}
             if missing:
@@ -77,10 +76,7 @@ class Config:
                     {"$set": missing},
                 )
                 doc.update(missing)
-                logger.info("🔄 ᴄᴏɴꜰɪɢ ᴍɪɢʀᴀᴛᴇᴅ — ꜰɪᴇʟᴅꜱ ᴀᴅᴅᴇᴅ: %s", list(missing.keys()))
-            logger.info("📥 ᴄᴏɴꜰɪɢ ꜰᴏᴜɴᴅ & ᴇɴʜᴀɴᴄᴇᴅ ꜰᴏʀ ᴜꜱᴇ")
         cls._data = doc
-        logger.info("✨ ᴄᴏɴꜰɪɢ ɪꜱ ʟɪᴠᴇ ᴀɴᴅ ᴛᴜɴᴇᴅ ᴛᴏ ᴘᴇʀꜰᴇᴄᴛɪᴏɴ")
 
     @classmethod
     async def update(cls, db, updates: dict):
@@ -109,9 +105,9 @@ class Config:
         if not Config.API_HASH:
             missing.append("API_HASH")
         if not Config.FLOG_CHAT_ID or Config.FLOG_CHAT_ID == 0:
-            missing.append("FLOG_CHAT_ID (or legacy DUMP_CHAT_ID)")
+            missing.append("FLOG_CHAT_ID")
         if missing:
             raise ValueError(f"missing required configuration: {', '.join(missing)}")
         if not Config.URL:
-            logger.warning("⚠️ ᴜʀʟ ɴᴏᴛ ꜱᴇᴛ — ᴅᴏᴡɴʟᴏᴀᴅ ʟɪɴᴋꜱ ᴡɪʟʟ ᴜꜱᴇ ʟᴏᴄᴀʟʜᴏꜱᴛ")
+            logger.warning("URL not set — download links will use localhost")
         return True

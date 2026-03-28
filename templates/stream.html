@@ -787,22 +787,26 @@
     }
     .pip-return-btn:active { transform: scale(.97); }
 
-    /* ── UI Layer: when settings open, intercept all non-settings clicks ── */
+    /* ── UI Layer: transparent click-catcher when settings open ── */
     .settings-layer {
       display: none;
       position: fixed;
       inset: 0;
-      z-index: 9990;
+      z-index: 9997;
       background: transparent;
       cursor: default;
       touch-action: none;
+      pointer-events: none;
     }
-    .settings-layer.active { display: block; }
+    .settings-layer.active {
+      display: block;
+      pointer-events: auto;
+    }
 
-    /* ── Settings popup — YouTube-style premium redesign ─────────
-       Desktop: absolute bottom-right above ctrl-bar.
-       Mobile: fixed bottom sheet with slide-up animation.
-       Always uses fixed positioning to escape player stacking context.
+    /* ── Settings popup ─────────────────────────────────────────
+       Always position:fixed to escape player stacking contexts.
+       Desktop: bottom-right above ctrl-bar.
+       Mobile: bottom sheet.
     ────────────────────────────────────────────────────────── */
     .settings-popup {
       position: fixed;
@@ -810,20 +814,20 @@
       right: 16px;
       background: var(--popup-bg);
       border: 1px solid var(--popup-border);
-      border-radius: 18px;
+      border-radius: 16px;
       box-shadow: var(--popup-shadow);
       padding: 0;
-      min-width: 290px;
-      max-width: min(340px, calc(100vw - 24px));
+      min-width: 280px;
+      max-width: min(330px, calc(100vw - 24px));
       z-index: 9999;
       opacity: 0;
-      transform: translateY(12px) scale(.96);
+      transform: translateY(10px) scale(.97);
       pointer-events: none;
-      transition: opacity .22s ease, transform .25s cubic-bezier(.34,1.56,.64,1);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      isolation: isolate;
+      transition: opacity .2s ease, transform .22s cubic-bezier(.34,1.56,.64,1);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       overflow: hidden;
+      isolation: isolate;
     }
 
     /* Mobile: bottom sheet */
@@ -1251,18 +1255,22 @@
     .track-item i { font-size: .66rem; width: 13px; color: #667eea; flex-shrink: 0; }
     .no-tracks { padding: 5px 12px 3px; font-size: .73rem; color: var(--text-muted); font-style: italic; }
 
-    /* ── Settings Overlay (mobile backdrop) ────────── */
+    /* ── Settings Overlay (mobile backdrop, BEHIND popup) ────────── */
     .settings-overlay {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,.6);
-      z-index: 9991;
+      background: rgba(0,0,0,.55);
+      z-index: 9996;
       pointer-events: none;
     }
     .settings-overlay.active {
       display: block;
       pointer-events: auto;
+    }
+    /* on desktop, no dark overlay */
+    @media (min-width: 601px) {
+      .settings-overlay.active { background: transparent; }  
     }
 
     /* non-video file card */
@@ -2377,22 +2385,33 @@
     const popup   = document.getElementById('settings-popup');
     const overlay = document.getElementById('settings-overlay');
     const layer   = document.getElementById('settings-layer');
-    if (popup)   popup.classList.add('open');
-    if (overlay) overlay.classList.add('active');
+    const btn     = document.getElementById('settings-btn');
+    if (!popup) return;
+
+    popup.classList.add('open');
     if (layer)   layer.classList.add('active');
+    if (overlay) overlay.classList.add('active');
     settingsOpen = true;
     _showPanel('main');
     activeSubPanel = null;
-    const btn = document.getElementById('settings-btn');
     if (btn) btn.classList.add('active');
 
-    // On desktop: position popup above settings button
-    if (popup && window.innerWidth > 600 && btn) {
-      const btnRect = btn.getBoundingClientRect();
-      popup.style.bottom  = (window.innerHeight - btnRect.top + 8) + 'px';
-      popup.style.right   = (window.innerWidth - btnRect.right + 0) + 'px';
-      popup.style.top     = 'auto';
-      popup.style.left    = 'auto';
+    // On desktop: position popup above the settings button
+    if (window.innerWidth > 600 && btn) {
+      const btnRect  = btn.getBoundingClientRect();
+      const popupH   = popup.offsetHeight || 280;
+      const topPos   = btnRect.top - popupH - 10;
+      popup.style.position = 'fixed';
+      popup.style.bottom   = 'auto';
+      popup.style.top      = Math.max(8, topPos) + 'px';
+      popup.style.right    = (window.innerWidth - btnRect.right) + 'px';
+      popup.style.left     = 'auto';
+    } else {
+      // Mobile: bottom sheet — reset inline positioning
+      popup.style.top    = '';
+      popup.style.bottom = '';
+      popup.style.right  = '';
+      popup.style.left   = '';
     }
   }
 
@@ -2400,15 +2419,14 @@
     const popup   = document.getElementById('settings-popup');
     const overlay = document.getElementById('settings-overlay');
     const layer   = document.getElementById('settings-layer');
+    const btn     = document.getElementById('settings-btn');
     if (popup)   popup.classList.remove('open');
     if (overlay) overlay.classList.remove('active');
     if (layer)   layer.classList.remove('active');
-    settingsOpen = false;
+    settingsOpen   = false;
     activeSubPanel = null;
-    const btn = document.getElementById('settings-btn');
     if (btn) btn.classList.remove('active');
-    // Reset to main panel state after close
-    setTimeout(() => { if (!settingsOpen) _showPanel('main'); }, 260);
+    setTimeout(() => { if (!settingsOpen) _showPanel('main'); }, 240);
   }
 
   /* Open a named sub-panel (slides in from right) */

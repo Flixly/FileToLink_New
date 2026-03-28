@@ -9,7 +9,7 @@ from .utils import (
 )
 from .crypto import Cryptic
 from .stream import StreamingService
-from .bandwidth import check_bandwidth_limit
+from .bandwidth import check_bandwidth_limit, check_user_bandwidth, should_warn_global, should_warn_user
 
 __all__ = [
     "format_size",
@@ -22,4 +22,7 @@ __all__ = [
     "Cryptic",
     "StreamingService",
     "check_bandwidth_limit",
+    "check_user_bandwidth",
+    "should_warn_global",
+    "should_warn_user",
 ]

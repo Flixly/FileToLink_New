@@ -21,11 +21,11 @@ class LoggingFormatter(logging.Formatter):
     PURPLE = "\033[38;5;135m"
 
     LEVEL_STYLES = {
-        logging.DEBUG:    (GREY,   "ᴅᴇʙᴜɢ  "),
-        logging.INFO:     (CYAN,   "ɪɴꜰᴏ   "),
-        logging.WARNING:  (YELLOW, "ᴡᴀʀɴ   "),
-        logging.ERROR:    (RED,    "ᴇʀʀᴏʀ  "),
-        logging.CRITICAL: (RED,    "ᴄʀɪᴛɪᴄ "),
+        logging.DEBUG:    (GREY,   "DEBUG  "),
+        logging.INFO:     (CYAN,   "INFO   "),
+        logging.WARNING:  (YELLOW, "WARN   "),
+        logging.ERROR:    (RED,    "ERROR  "),
+        logging.CRITICAL: (RED,    "CRITIC "),
     }
 
     def format(self, record: logging.LogRecord) -> str:
@@ -66,39 +66,35 @@ logger = logging.getLogger(__name__)
 
 
 async def main() -> None:
-    logger.info("  🎬  ꜰʟɪx ꜰɪʟᴇ ꜱᴛʀᴇᴀᴍ ʙᴏᴛ  ʙᴏᴏᴛɪɴɢ ᴜᴘ…")
+    logger.info("🎬 FLiX File Stream Bot — booting up…")
 
-    #Config validation
-    logger.info("🔍  ᴠᴀʟɪᴅᴀᴛɪɴɢ ᴄᴏɴꜰɪɢᴜʀᴀᴛɪᴏɴ…")
+    logger.info("🔍 Validating configuration…")
     try:
         Config.validate()
     except ValueError as exc:
-        logger.critical("❌  ᴄᴏɴꜰɪɢ ᴇʀʀᴏʀ: %s", exc)
+        logger.critical("❌ Config error: %s", exc)
         raise SystemExit(1) from exc
 
-    #Database
-    logger.info("🗄️   ᴄᴏɴɴᴇᴄᴛɪɴɢ ᴛᴏ ᴅᴀᴛᴀʙᴀꜱᴇ…")
+    logger.info("🗄️  Connecting to database…")
     database = Database(Config.DB_URI, Config.DATABASE_NAME)
     await database.init_db()
     db_instance.set(database)
     await Config.load(database.db)
-    logger.info("✅  ᴄᴏɴꜰɪɢ ᴄʀᴇᴀᴛᴇᴅ & ꜰᴜʟʟʏ ᴛᴜɴᴇᴅ ɪɴ ᴅʙ")
+    logger.info("✅ Database ready")
 
-    #Bot
-    logger.info("🤖  ᴄᴏɴɴᴇᴄᴛɪɴɢ ʙᴏᴛ ᴛᴏ ᴛᴇʟᴇɢʀᴀᴍ…")
+    logger.info("🤖 Connecting bot to Telegram…")
     bot = Bot()
     await bot.start()
     bot_info = bot.me
     logger.info(
-        "✅  ʙᴏᴛ ᴄᴏɴɴᴇᴄᴛᴇᴅ  │  @%s  │  ɴᴀᴍᴇ: %s  │  ɪᴅ: %s  │  ᴅᴄ: %s",
+        "✅ Bot connected | @%s | %s | id: %s | dc: %s",
         bot_info.username,
         bot_info.first_name,
         bot_info.id,
         bot_info.dc_id,
     )
 
-    #Web Server
-    logger.info("🌐  ꜱᴛᴀʀᴛɪɴɢ ᴡᴇʙ ꜱᴇʀᴠᴇʀ…")
+    logger.info("🌐 Starting web server…")
     web_app = build_app(bot, database)
     runner  = web.AppRunner(web_app)
     await runner.setup()
@@ -106,24 +102,17 @@ async def main() -> None:
     await site.start()
 
     public_url = Config.URL or f"http://{Config.BIND_ADDRESS}:{Config.PORT}"
-    logger.info("✅  ᴡᴇʙ ꜱᴇʀᴠᴇʀ ʟɪᴠᴇ")
-    logger.info("🔗  %s", public_url)
-    logger.info(
-        "🚀  ᴀʟʟ ꜱᴇʀᴠɪᴄᴇꜱ ʀᴇᴀᴅʏ  │  ʙᴏᴛ: %s (@%s)",
-        bot_info.first_name,
-        bot_info.username,
-    )
+    logger.info("✅ Web server live: %s", public_url)
+    logger.info("🚀 All services ready | bot: %s (@%s)", bot_info.first_name, bot_info.username)
 
     try:
         await asyncio.Event().wait()
     finally:
-        logger.info("🛑  ꜱʜᴜᴛᴛɪɴɢ ᴅᴏᴡɴ ᴡᴇʙ ꜱᴇʀᴠᴇʀ…")
+        logger.info("🛑 Shutting down…")
         await runner.cleanup()
-        logger.info("🛑  ᴄʟᴏꜱɪɴɢ ᴅᴀᴛᴀʙᴀꜱᴇ…")
         await database.close()
-        logger.info("🛑  ꜱᴛᴏᴘᴘɪɴɢ ʙᴏᴛ…")
         await bot.stop()
-        logger.info("✅  ꜱʜᴜᴛᴅᴏᴡɴ ᴄᴏᴍᴘʟᴇᴛᴇ")
+        logger.info("✅ Shutdown complete")
 
 
 asyncio.run(main())

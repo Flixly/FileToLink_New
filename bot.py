@@ -22,11 +22,10 @@ class Bot(Client):
     async def start(self):
         await super().start()
         me = await self.get_me()
-        self.me        = me
-        Config.BOT_INFO = me
-        Config.UPTIME  = time.time()
-        logger.info("⚡  ʙᴏᴛ: @%s  │  ɴᴀᴍᴇ: %s  │  ɪᴅ: %s  │  ᴡᴏʀᴋᴇʀs: %s",
-                    me.username, me.first_name, me.id, "50")
+        self.me       = me
+        Config.UPTIME = time.time()
+        logger.info("bot: @%s | name: %s | id: %s | workers: 50",
+                    me.username, me.first_name, me.id)
         await self._resolve_log_channel()
         await self._set_commands()
         return me
@@ -37,36 +36,38 @@ class Bot(Client):
         try:
             chat = await self.get_chat(Config.FLOG_CHAT_ID)
             logger.info(
-                "✅  ʟᴏɢ ᴄʜᴀɴɴᴇʟ ʀᴇꜱᴏʟᴠᴇᴅ  │  ɪᴅ: %s  │  ɴᴀᴍᴇ: %s",
+                "log channel resolved | id: %s | name: %s",
                 Config.FLOG_CHAT_ID,
                 getattr(chat, "title", None) or getattr(chat, "first_name", "?"),
             )
         except Exception as exc:
             logger.warning(
-                "⚠️  ᴄᴏᴜʟᴅ ɴᴏᴛ ʀᴇꜱᴏʟᴠᴇ FLOG_CHAT_ID %s — ʙᴏᴛ ᴍᴜꜱᴛ ʙᴇ ᴀ ᴍᴇᴍʙᴇʀ/ᴀᴅᴍɪɴ: %s",
-                Config.FLOG_CHAT_ID,
-                exc,
+                "could not resolve FLOG_CHAT_ID %s — bot must be a member/admin: %s",
+                Config.FLOG_CHAT_ID, exc,
             )
 
     async def stop(self, *args):
         await super().stop()
-        logger.info("🛑  ʙᴏᴛ sᴛᴏᴘᴘᴇᴅ")
+        logger.info("bot stopped")
 
     async def _set_commands(self):
         user_commands = [
-            BotCommand("start",     "🚀 ꜱᴛᴀʀᴛ ᴛʜᴇ ʙᴏᴛ"),
-            BotCommand("help",      "📚 ɢᴇᴛ ʜᴇʟᴘ ɪɴꜰᴏ"),
-            BotCommand("about",     "ℹ️ ᴀʙᴏᴜᴛ ᴛʜɪꜱ ʙᴏᴛ"),
-            BotCommand("files",     "📂 ᴠɪᴇᴡ ʏᴏᴜʀ ꜰɪʟᴇꜱ"),
+            BotCommand("start",     "🚀 Start the bot"),
+            BotCommand("help",      "📚 Get help info"),
+            BotCommand("about",     "ℹ️ About this bot"),
+            BotCommand("files",     "📂 View your files"),
         ]
 
         owner_commands = user_commands + [
-            BotCommand("adminstats",   "🔐 ᴀᴅᴍɪɴ ꜱᴛᴀᴛꜱ (ᴜᴘᴛɪᴍᴇ, ʙᴡ, ᴜꜱᴇʀꜱ, ꜰɪʟᴇꜱ)"),
-            BotCommand("bot_settings", "⚙️ ʙᴏᴛ ꜱᴇᴛᴛɪɴɢꜱ ᴘᴀɴᴇʟ"),
-            BotCommand("broadcast",    "📢 ʙʀᴏᴀᴅᴄᴀꜱᴛ ᴍᴇꜱꜱᴀɢᴇ"),
-            BotCommand("revoke",       "🗑️ ʀᴇᴠᴏᴋᴇ ꜰɪʟᴇ ʙʏ ʜᴀꜱʜ"),
-            BotCommand("revokeall",    "🗑️ ʙᴜʟᴋ ʀᴇᴠᴏᴋᴇ [ᴀʟʟ | ᴜꜱᴇʀ_ɪᴅ]"),
-            BotCommand("logs",         "📄 ɢᴇᴛ ʙᴏᴛ ʟᴏɢꜱ"),
+            BotCommand("adminstats",   "📊 Admin stats"),
+            BotCommand("bot_settings", "⚙️ Bot settings panel"),
+            BotCommand("ban",          "🚫 Ban a user"),
+            BotCommand("unban",        "✅ Unban a user"),
+            BotCommand("checkban",     "🔍 Check ban status"),
+            BotCommand("broadcast",    "📢 Broadcast message"),
+            BotCommand("revoke",       "🗑️ Revoke file by hash"),
+            BotCommand("revokeall",    "🗑️ Bulk revoke files"),
+            BotCommand("logs",         "📄 Get bot logs"),
         ]
         try:
             await self.set_bot_commands(user_commands)
@@ -78,13 +79,8 @@ class Bot(Client):
                         scope=BotCommandScopeChat(chat_id=owner_id),
                     )
                 except Exception as e:
-                    logger.warning(
-                        "⚠️  ᴄᴏᴜʟᴅ ɴᴏᴛ ꜱᴇᴛ ᴏᴡɴᴇʀ ᴄᴏᴍᴍᴀɴᴅꜱ ꜰᴏʀ %s: %s",
-                        owner_id, e,
-                    )
+                    logger.warning("could not set owner commands for %s: %s", owner_id, e)
 
-            logger.info("✅  ʙᴏᴛ ᴄᴏᴍᴍᴀɴᴅꜱ ʀᴇɢɪꜱᴛᴇʀᴇᴅ")
+            logger.info("bot commands registered")
         except Exception as e:
-            logger.error("❌  ꜰᴀɪʟᴇᴅ ᴛᴏ ʀᴇɢɪꜱᴛᴇʀ ᴄᴏᴍᴍᴀɴᴅꜱ: %s", e)
-
-
+            logger.error("failed to register commands: %s", e)
