@@ -642,9 +642,9 @@ class StreamingService:
                 _file_cache_atime[file_hash] = now
 
         if Config.get("bandwidth_mode", True):
-            stats  = await self.db.get_bandwidth_stats()
+            cycle  = await self.db.get_global_bw_cycle()
             max_bw = Config.get("max_bandwidth", 107374182400)
-            if max_bw and stats["total_bandwidth"] >= max_bw:
+            if max_bw and cycle.get("used", 0) >= max_bw:
                 raise web.HTTPServiceUnavailable(reason="bandwidth limit exceeded")
 
         file_size  = int(file_data["file_size"])
@@ -796,12 +796,21 @@ class StreamingService:
         if bytes_sent > 0:
             should_track = await _should_track_bandwidth(client_ip, message_id, from_bytes)
             if should_track:
-                task = asyncio.ensure_future(self.db.track_bandwidth(message_id, bytes_sent))
-                task.add_done_callback(
-                    lambda t: t.exception() and logger.error(
-                        "track_bandwidth error: %s", t.exception()
-                    )
-                )
+                user_id = str(file_data.get("user_id", ""))
+
+                async def _do_track(mid=message_id, bs=bytes_sent, uid=user_id):
+                    try:
+                        # Legacy daily + file-level tracking
+                        await self.db.track_bandwidth(mid, bs)
+                        # Monthly global cycle
+                        await self.db.record_global_bw(bs)
+                        # Monthly per-user cycle (skip for missing user_id)
+                        if uid:
+                            await self.db.record_user_bw(uid, bs)
+                    except Exception as exc:
+                        logger.error("track_bandwidth_full error: %s", exc)
+
+                asyncio.ensure_future(_do_track())
             else:
                 logger.debug(
                     "bw dedup  msg=%s  ip=%s  from=%d  bytes=%d  (skipped)",
