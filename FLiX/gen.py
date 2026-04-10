@@ -13,7 +13,10 @@ from pyrogram.types import (
 )
 
 from config import Config
-from helper import Cryptic, format_size, escape_markdown, small_caps, check_fsub, check_owner
+from helper import (
+    Cryptic, format_size, escape_markdown, small_caps,
+    check_fsub, check_owner, check_user_bandwidth_limit,
+)
 from database import db
 
 logger = logging.getLogger(__name__)
@@ -28,6 +31,68 @@ async def check_access(user_id: int) -> bool:
     if user_id in Config.OWNER_ID:
         return True
     return await db.is_sudo_user(str(user_id))
+
+
+async def _check_and_warn_user_limit(client: Client, message: Message, user_id: int) -> bool:
+    """
+    Enforce per-user bandwidth/file limits.
+    Returns True if allowed, False if blocked (warning already sent).
+    Sends a warning message when user is newly blocked.
+    """
+    # Owners are never limited
+    if user_id in Config.OWNER_ID:
+        return True
+
+    allowed, reason, info = await check_user_bandwidth_limit(db, str(user_id))
+    if allowed:
+        return True
+
+    # Determine the block reason and compose message
+    warn_sent = info.get("warn_sent", False)
+
+    if reason == "blocked_by_admin":
+        block_text = (
+            f"🚫 **{small_caps('access restricted')}**\n\n"
+            "ʏᴏᴜʀ ᴀᴄᴄᴇꜱꜱ ʜᴀꜱ ʙᴇᴇɴ **ʀᴇꜱᴛʀɪᴄᴛᴇᴅ** ʙʏ ᴀɴ ᴀᴅᴍɪɴɪꜱᴛʀᴀᴛᴏʀ.\n\n"
+            "📩 ᴘʟᴇᴀꜱᴇ ᴄᴏɴᴛᴀᴄᴛ ꜱᴜᴘᴘᴏʀᴛ ꜰᴏʀ ᴍᴏʀᴇ ɪɴꜰᴏʀᴍᴀᴛɪᴏɴ."
+        )
+    elif reason == "bandwidth_exceeded":
+        bw_used  = info.get("bw_used",  0)
+        bw_limit = info.get("bw_limit", 0)
+        block_text = (
+            f"⚠️ **{small_caps('bandwidth limit reached')}**\n\n"
+            f"📊 **{small_caps('used')}:**  `{format_size(bw_used)}`\n"
+            f"🔒 **{small_caps('limit')}:** `{format_size(bw_limit)}`\n\n"
+            "🚫 **ꜱᴛʀᴇᴀᴍɪɴɢ ᴀɴᴅ ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ ɪꜱ ɴᴏᴡ ʙʟᴏᴄᴋᴇᴅ.**\n\n"
+            "📅 ᴀᴄᴄᴇꜱꜱ ᴡɪʟʟ ʙᴇ ʀᴇꜱᴛᴏʀᴇᴅ ᴡʜᴇɴ ʏᴏᴜʀ ʟɪᴍɪᴛ ʀᴇꜱᴇᴛꜱ ᴏʀ ᴀɴ ᴀᴅᴍɪɴ ᴜᴘᴅᴀᴛᴇꜱ ʏᴏᴜʀ ʟɪᴍɪᴛ."
+        )
+        # Auto-block the user if not already blocked
+        if not info.get("blocked", False):
+            await db.set_user_blocked(str(user_id), True, "bandwidth_exceeded")
+    elif reason == "file_limit_exceeded":
+        files_used  = info.get("files_used",  0)
+        files_limit = info.get("files_limit", 0)
+        block_text = (
+            f"⚠️ **{small_caps('file limit reached')}**\n\n"
+            f"📂 **{small_caps('files')}:** `{files_used}` / `{files_limit}`\n\n"
+            "🚫 **ʏᴏᴜ ᴄᴀɴɴᴏᴛ ᴜᴘʟᴏᴀᴅ ᴍᴏʀᴇ ꜰɪʟᴇꜱ.**\n\n"
+            "📅 ᴀᴄᴄᴇꜱꜱ ᴡɪʟʟ ʙᴇ ʀᴇꜱᴛᴏʀᴇᴅ ᴡʜᴇɴ ᴀɴ ᴀᴅᴍɪɴ ᴜᴘᴅᴀᴛᴇꜱ ʏᴏᴜʀ ʟɪᴍɪᴛ."
+        )
+        if not info.get("blocked", False):
+            await db.set_user_blocked(str(user_id), True, "file_limit_exceeded")
+    else:
+        block_text = (
+            f"🚫 **{small_caps('access blocked')}**\n\n"
+            "ʏᴏᴜʀ ᴀᴄᴄᴇꜱꜱ ɪꜱ ᴄᴜʀʀᴇɴᴛʟʏ ʀᴇꜱᴛʀɪᴄᴛᴇᴅ."
+        )
+
+    await client.send_message(
+        chat_id=message.chat.id,
+        text=block_text,
+        reply_to_message_id=message.id,
+        disable_web_page_preview=True,
+    )
+    return False
 
 
 @Client.on_message(
@@ -51,6 +116,7 @@ async def file_handler(client: Client, message: Message):
         )
         return
 
+    # ── Check global bandwidth ──────────────────────────────────
     stats         = await db.get_bandwidth_stats()
     max_bandwidth = Config.get("max_bandwidth", 107374182400)
     if Config.get("bandwidth_mode", True) and stats["total_bandwidth"] >= max_bandwidth:
@@ -63,6 +129,10 @@ async def file_handler(client: Client, message: Message):
             reply_to_message_id=message.id,
             disable_web_page_preview=True,
         )
+        return
+
+    # ── Check per-user limit (warn + block immediately) ─────────
+    if not await _check_and_warn_user_limit(client, message, user_id):
         return
 
     if message.document:

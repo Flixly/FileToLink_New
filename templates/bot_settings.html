@@ -527,6 +527,72 @@
     .spin { animation: rotate 1s linear infinite; }
     @keyframes rotate { to { transform: rotate(360deg); } }
 
+    /* ── Bandwidth Reset Countdown Card ─────────────────────── */
+    .bw-reset-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: linear-gradient(135deg, rgba(167,139,250,.12), rgba(102,126,234,.08));
+      border: 1px solid rgba(167,139,250,.22);
+      border-radius: 18px;
+      padding: 18px 20px;
+      margin: 18px 0 10px;
+      position: relative;
+      overflow: hidden;
+      transition: box-shadow .3s ease;
+    }
+    .bw-reset-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 80% 50%, rgba(167,139,250,.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .bw-reset-card:hover { box-shadow: 0 8px 28px rgba(167,139,250,.18); }
+    .bw-reset-icon {
+      width: 46px; height: 46px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(167,139,250,.28), rgba(102,126,234,.2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.25rem;
+      color: #a78bfa;
+      flex-shrink: 0;
+      box-shadow: 0 4px 14px rgba(167,139,250,.2);
+    }
+    .bw-reset-body { flex: 1; min-width: 0; }
+    .bw-reset-title {
+      font-size: .72rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 3px;
+    }
+    .bw-reset-timer {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: #a78bfa;
+      letter-spacing: -.01em;
+      line-height: 1.2;
+    }
+    .bw-reset-sub {
+      font-size: .68rem;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+    .bw-reset-ring {
+      width: 52px; height: 52px;
+      flex-shrink: 0;
+    }
+    .bw-ring-svg { width: 52px; height: 52px; }
+    #bw-ring-circle {
+      transition: stroke-dashoffset 1s ease;
+    }
+    .bw-reset-countdown {
+      color: #a78bfa !important;
+      font-weight: 700 !important;
+    }
+
     /* ── Scrollbar ───────────────────────────────────────────── */
     ::-webkit-scrollbar { width: 5px; }
     ::-webkit-scrollbar-track { background: var(--bg-base); }
@@ -708,6 +774,31 @@
               Remaining
             </span>
             <span class="info-value" id="bw-remaining">{{ bw_remaining }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">
+              <span class="il-icon" style="background:rgba(160,140,255,.2)"><i class="fa-solid fa-clock-rotate-left" style="color:#a78bfa"></i></span>
+              Resets In
+            </span>
+            <span class="info-value bw-reset-countdown" id="bw-reset-in">{{ bw_reset_in }}</span>
+          </div>
+        </div>
+
+        <!-- ── Bandwidth Reset Countdown Card ── -->
+        <div class="bw-reset-card" id="bw-reset-card">
+          <div class="bw-reset-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+          <div class="bw-reset-body">
+            <div class="bw-reset-title">Bandwidth Resets In</div>
+            <div class="bw-reset-timer" id="bw-reset-timer">{{ bw_reset_in }}</div>
+            <div class="bw-reset-sub">Auto-countdown · updates live</div>
+          </div>
+          <div class="bw-reset-ring">
+            <svg viewBox="0 0 40 40" class="bw-ring-svg">
+              <circle cx="20" cy="20" r="16" fill="none" stroke="rgba(167,139,250,.15)" stroke-width="3"/>
+              <circle cx="20" cy="20" r="16" fill="none" stroke="#a78bfa" stroke-width="3"
+                      stroke-dasharray="100.53" stroke-dashoffset="0"
+                      stroke-linecap="round" id="bw-ring-circle" transform="rotate(-90 20 20)"/>
+            </svg>
           </div>
         </div>
 
@@ -923,6 +1014,53 @@
     stopSpin(ico);
   }
 
+  // ── Bandwidth reset live countdown ─────────────────────────
+  let _bwSecondsLeft = {{ bw_seconds_left | default(0) }};
+  let _bwCountdownTimer = null;
+  const _bwResetIntervalDays = 30; // default
+
+  function _formatCountdown(secs) {
+    if (secs <= 0) return 'Overdue';
+    const d = Math.floor(secs / 86400);
+    const h = Math.floor((secs % 86400) / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    if (d > 0 && h > 0) return d + 'd ' + h + 'h';
+    if (d > 0) return d + 'd';
+    if (h > 0 && m > 0) return h + 'h ' + m + 'm';
+    if (h > 0) return h + 'h';
+    if (m > 0) return m + 'm ' + s + 's';
+    return s + 's';
+  }
+
+  function _updateCountdownUI() {
+    const timerEl  = document.getElementById('bw-reset-timer');
+    const resetInEl = document.getElementById('bw-reset-in');
+    const ringEl   = document.getElementById('bw-ring-circle');
+    const label    = _formatCountdown(_bwSecondsLeft);
+    if (timerEl)  timerEl.textContent  = label;
+    if (resetInEl) resetInEl.textContent = label;
+    // Ring progress: circumference = 2π×16 ≈ 100.53
+    if (ringEl) {
+      const totalSecs = _bwResetIntervalDays * 86400;
+      const fraction  = totalSecs > 0 ? _bwSecondsLeft / totalSecs : 0;
+      const dashOffset = 100.53 * (1 - fraction);
+      ringEl.style.strokeDashoffset = dashOffset;
+    }
+  }
+
+  function startBwCountdown(secs) {
+    _bwSecondsLeft = secs;
+    if (_bwCountdownTimer) clearInterval(_bwCountdownTimer);
+    _updateCountdownUI();
+    _bwCountdownTimer = setInterval(() => {
+      if (_bwSecondsLeft > 0) {
+        _bwSecondsLeft--;
+        _updateCountdownUI();
+      }
+    }, 1000);
+  }
+
   // ── Bandwidth refresh ──────────────────────────────────────
   async function refreshBandwidth() {
     const ico = spinIcon('bw-refresh-icon');
@@ -946,6 +1084,10 @@
       if (mode) {
         mode.className = 'badge ' + (d.bandwidth_mode ? 'badge-ok' : 'badge-error');
         mode.textContent = d.bandwidth_mode ? 'Active' : 'Inactive';
+      }
+      // Update reset countdown from server
+      if (d.seconds_until_reset != null) {
+        startBwCountdown(d.seconds_until_reset);
       }
     } catch(e) { console.warn('bw refresh failed:', e); }
     stopSpin(ico);
@@ -1012,11 +1154,14 @@
 
   // ── Auto-refresh every 30s ─────────────────────────────────
   refreshStats();
+  refreshBandwidth();
   setInterval(refreshStats,     30000);
   setInterval(refreshBandwidth, 30000);
   // Always start health monitoring at page load so Live Streaming
   // Sessions is updated even before the Health tab is opened.
   startHealthUpdates();
+  // Start live reset countdown using server-rendered initial value
+  startBwCountdown({{ bw_seconds_left | default(0) }});
   </script>
 </body>
 </html>

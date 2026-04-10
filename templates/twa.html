@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>{{ bot_name }} — Files</title>
+  <link rel="icon" type="image/jpeg" href="https://i.ibb.co/2YsHg8tf/IMG-3062.jpg">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    /* ── CSS Variables (Telegram-aware theming) ────────────── */
+    :root {
+      --bg:            var(--tg-theme-bg-color,          #0f0c29);
+      --secondary-bg:  var(--tg-theme-secondary-bg-color,#1a1740);
+      --text:          var(--tg-theme-text-color,         #ffffff);
+      --hint:          var(--tg-theme-hint-color,         rgba(255,255,255,.5));
+      --link:          var(--tg-theme-link-color,         #667eea);
+      --button:        var(--tg-theme-button-color,       #667eea);
+      --button-text:   var(--tg-theme-button-text-color,  #ffffff);
+      --accent:        #667eea;
+      --accent2:       #764ba2;
+      --card-bg:       rgba(255,255,255,0.06);
+      --card-border:   rgba(255,255,255,0.10);
+      --danger:        #ff6b6b;
+      --success:       #43e97b;
+      --warn:          #f6d365;
+      --radius:        16px;
+      --radius-sm:     10px;
+    }
+
+    /* ── Base Reset ─────────────────────────────────────────── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html {
+      height: 100%;
+      background: var(--bg);
+      overscroll-behavior: none;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      min-height: 100dvh;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      padding-bottom: env(safe-area-inset-bottom, 16px);
+    }
+
+    /* ── App Layout ─────────────────────────────────────────── */
+    #app {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      min-height: 100dvh;
+    }
+
+    /* ── Header ─────────────────────────────────────────────── */
+    .twa-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--secondary-bg);
+      border-bottom: 1px solid var(--card-border);
+      padding: 14px 16px 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+
+    .twa-logo {
+      width: 38px; height: 38px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; color: #fff;
+      flex-shrink: 0;
+      box-shadow: 0 4px 14px rgba(102,126,234,.35);
+    }
+
+    .twa-header-text { flex: 1; min-width: 0; }
+    .twa-header-text h1 {
+      font-size: .95rem;
+      font-weight: 800;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .twa-header-text p {
+      font-size: .7rem;
+      color: var(--hint);
+      margin-top: 1px;
+    }
+
+    .twa-user-avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: .9rem; color: #fff; font-weight: 700;
+      flex-shrink: 0;
+      cursor: pointer;
+      transition: transform .2s ease;
+    }
+    .twa-user-avatar:active { transform: scale(.94); }
+
+    /* ── Tab Bar ────────────────────────────────────────────── */
+    .twa-tabs {
+      display: flex;
+      background: var(--secondary-bg);
+      border-bottom: 1px solid var(--card-border);
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .twa-tabs::-webkit-scrollbar { display: none; }
+
+    .twa-tab {
+      flex: 1;
+      min-width: 70px;
+      padding: 10px 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      font-size: .62rem;
+      font-weight: 600;
+      color: var(--hint);
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      transition: color .2s ease;
+      border-bottom: 2px solid transparent;
+      font-family: 'Poppins', sans-serif;
+    }
+    .twa-tab i { font-size: 1rem; }
+    .twa-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    /* ── Content Area ───────────────────────────────────────── */
+    .twa-content {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .twa-panel { display: none; padding: 16px; }
+    .twa-panel.active { display: block; }
+
+    /* ── Loading / States ───────────────────────────────────── */
+    .loading-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+      gap: 16px;
+      color: var(--hint);
+      font-size: .85rem;
+    }
+    .loading-spinner {
+      width: 40px; height: 40px;
+      border: 3px solid rgba(102,126,234,.2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+      gap: 12px;
+      text-align: center;
+    }
+    .empty-icon {
+      font-size: 3rem;
+      opacity: .3;
+    }
+    .empty-title {
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .empty-sub {
+      font-size: .78rem;
+      color: var(--hint);
+      max-width: 220px;
+    }
+
+    /* ── File Cards ─────────────────────────────────────────── */
+    .files-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .file-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 14px 14px 12px;
+      cursor: pointer;
+      transition: all .2s ease;
+      position: relative;
+      overflow: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .file-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(102,126,234,.04), transparent);
+      opacity: 0;
+      transition: opacity .2s ease;
+    }
+    .file-card:active { transform: scale(.98); }
+    .file-card:active::before { opacity: 1; }
+
+    .file-card-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .file-type-icon {
+      width: 42px; height: 42px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+    .fti-video  { background: rgba(102,126,234,.18); color: #667eea; }
+    .fti-audio  { background: rgba(67,233,123,.15);  color: #43e97b; }
+    .fti-image  { background: rgba(246,211,101,.15); color: #f6d365; }
+    .fti-doc    { background: rgba(250,112,154,.15); color: #fa709a; }
+
+    .file-info { flex: 1; min-width: 0; }
+    .file-name {
+      font-size: .85rem;
+      font-weight: 700;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.3;
+    }
+    .file-meta {
+      font-size: .7rem;
+      color: var(--hint);
+      margin-top: 3px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .file-meta-dot { opacity: .4; }
+
+    .file-badge {
+      font-size: .6rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 999px;
+      flex-shrink: 0;
+      letter-spacing: .02em;
+    }
+    .fb-video  { background: rgba(102,126,234,.2); color: #a78bfa; }
+    .fb-audio  { background: rgba(67,233,123,.18); color: #43e97b; }
+    .fb-image  { background: rgba(246,211,101,.2); color: #f6d365; }
+    .fb-doc    { background: rgba(250,112,154,.2); color: #fa709a; }
+
+    .file-card-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .file-action-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 9px 12px;
+      border-radius: var(--radius-sm);
+      border: none;
+      font-size: .73rem;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: 'Poppins', sans-serif;
+      transition: all .18s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .fab-stream {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(102,126,234,.3);
+    }
+    .fab-stream:active { transform: scale(.96); filter: brightness(.9); }
+    .fab-download {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text);
+    }
+    .fab-download:active { transform: scale(.96); background: rgba(255,255,255,.1); }
+
+    /* ── User Profile Card ──────────────────────────────────── */
+    .profile-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .profile-avatar {
+      width: 58px; height: 58px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; color: #fff; font-weight: 700;
+      flex-shrink: 0;
+      box-shadow: 0 0 0 3px rgba(102,126,234,.2);
+    }
+
+    .profile-info { flex: 1; min-width: 0; }
+    .profile-name {
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--text);
+    }
+    .profile-username {
+      font-size: .75rem;
+      color: var(--hint);
+      margin-top: 2px;
+    }
+    .profile-badge {
+      font-size: .6rem;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 999px;
+      margin-top: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .pb-owner { background: rgba(255,215,0,.2); color: #ffd700; }
+    .pb-user  { background: rgba(102,126,234,.2); color: var(--accent); }
+    .pb-blocked { background: rgba(255,107,107,.2); color: var(--danger); }
+
+    /* ── Stats Cards ────────────────────────────────────────── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .stat-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      text-align: center;
+    }
+    .stat-val {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1.2;
+    }
+    .stat-label {
+      font-size: .65rem;
+      color: var(--hint);
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      font-weight: 600;
+    }
+
+    /* ── Bandwidth Bar ──────────────────────────────────────── */
+    .bw-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .bw-card-title {
+      font-size: .72rem;
+      font-weight: 700;
+      color: var(--hint);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .bw-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: .78rem;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+    .bw-row span:last-child { color: var(--hint); }
+    .bw-bar-bg {
+      height: 7px;
+      background: rgba(255,255,255,.1);
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 10px 0 6px;
+    }
+    .bw-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      transition: width .6s ease;
+    }
+    .bw-bar-fill.warn  { background: linear-gradient(90deg, #f6d365, #f093fb); }
+    .bw-bar-fill.crit  { background: linear-gradient(90deg, #ff6b6b, #f093fb); }
+    .bw-reset-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      font-size: .72rem;
+      color: var(--hint);
+    }
+    .bw-reset-row i { color: #a78bfa; }
+    .bw-reset-time { color: #a78bfa; font-weight: 700; }
+
+    /* ── Access Blocked Banner ──────────────────────────────── */
+    .blocked-banner {
+      background: rgba(255,107,107,.12);
+      border: 1px solid rgba(255,107,107,.28);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .blocked-banner-icon {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      background: rgba(255,107,107,.18);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; color: var(--danger);
+      flex-shrink: 0;
+    }
+    .blocked-banner-text h3 {
+      font-size: .85rem;
+      font-weight: 800;
+      color: var(--danger);
+      margin-bottom: 4px;
+    }
+    .blocked-banner-text p {
+      font-size: .72rem;
+      color: var(--hint);
+      line-height: 1.55;
+    }
+
+    /* ── Section Title ──────────────────────────────────────── */
+    .section-title {
+      font-size: .72rem;
+      font-weight: 700;
+      color: var(--hint);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* ── Pagination ─────────────────────────────────────────── */
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 16px 0 8px;
+    }
+    .page-btn {
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      font-size: .9rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all .18s ease;
+      font-family: 'Poppins', sans-serif;
+    }
+    .page-btn:disabled { opacity: .35; cursor: default; }
+    .page-btn:not(:disabled):active { background: rgba(102,126,234,.2); color: var(--accent); }
+    .page-info { font-size: .75rem; color: var(--hint); font-weight: 600; }
+
+    /* ── Toast ──────────────────────────────────────────────── */
+    .toast-wrap {
+      position: fixed;
+      bottom: calc(env(safe-area-inset-bottom, 16px) + 16px);
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      pointer-events: none;
+      width: calc(100% - 32px);
+      max-width: 360px;
+    }
+    .toast {
+      background: rgba(30,27,60,.92);
+      border: 1px solid rgba(255,255,255,.12);
+      backdrop-filter: blur(14px);
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: .8rem;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 8px 28px rgba(0,0,0,.4);
+      opacity: 0;
+      transform: translateY(16px) scale(.96);
+      transition: all .28s cubic-bezier(.34,1.56,.64,1);
+    }
+    .toast.show { opacity: 1; transform: translateY(0) scale(1); }
+    .toast i { color: var(--accent); flex-shrink: 0; }
+
+    /* ── Responsive ─────────────────────────────────────────── */
+    @media (min-width: 480px) {
+      .twa-content { max-width: 480px; margin: 0 auto; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ── Header ───────────────────────────────────────────── -->
+  <header class="twa-header">
+    <div class="twa-logo"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+    <div class="twa-header-text">
+      <h1>{{ bot_name }}</h1>
+      <p id="header-sub">Loading…</p>
+    </div>
+    <div class="twa-user-avatar" id="user-avatar" onclick="showTab('profile')">?</div>
+  </header>
+
+  <!-- ── Tab Bar ─────────────────────────────────────────── -->
+  <nav class="twa-tabs" role="tablist">
+    <button class="twa-tab active" onclick="showTab('files')" data-tab="files">
+      <i class="fa-solid fa-folder-open"></i>
+      Files
+    </button>
+    <button class="twa-tab" onclick="showTab('profile')" data-tab="profile">
+      <i class="fa-solid fa-user-circle"></i>
+      Profile
+    </button>
+    <button class="twa-tab" onclick="showTab('bandwidth')" data-tab="bandwidth">
+      <i class="fa-solid fa-satellite-dish"></i>
+      Bandwidth
+    </button>
+  </nav>
+
+  <!-- ── Content ─────────────────────────────────────────── -->
+  <main class="twa-content">
+
+    <!-- ── Files Tab ──────────────────────────────────────── -->
+    <div class="twa-panel active" id="panel-files">
+      <div id="files-loading" class="loading-wrap">
+        <div class="loading-spinner"></div>
+        <p>Loading your files…</p>
+      </div>
+      <div id="files-blocked" class="blocked-banner" style="display:none;">
+        <div class="blocked-banner-icon"><i class="fa-solid fa-ban"></i></div>
+        <div class="blocked-banner-text">
+          <h3>Access Restricted</h3>
+          <p id="blocked-reason">Your access has been restricted. Please contact support.</p>
+        </div>
+      </div>
+      <div id="files-container" style="display:none;">
+        <div class="section-title">
+          <span id="files-count-label">Your Files</span>
+          <span id="files-page-info" style="font-weight:400;text-transform:none;letter-spacing:0;font-size:.7rem;"></span>
+        </div>
+        <div class="files-list" id="files-list"></div>
+        <div class="pagination" id="pagination" style="display:none;">
+          <button class="page-btn" id="prev-btn" onclick="changePage(-1)">
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+          <span class="page-info" id="page-info-txt">1 / 1</span>
+          <button class="page-btn" id="next-btn" onclick="changePage(1)">
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+      <div id="files-empty" class="empty-state" style="display:none;">
+        <div class="empty-icon"><i class="fa-solid fa-folder-open"></i></div>
+        <div class="empty-title">No Files Yet</div>
+        <div class="empty-sub">Send files to the bot in Telegram to get stream links.</div>
+      </div>
+    </div>
+
+    <!-- ── Profile Tab ────────────────────────────────────── -->
+    <div class="twa-panel" id="panel-profile">
+      <div id="profile-loading" class="loading-wrap">
+        <div class="loading-spinner"></div>
+        <p>Loading profile…</p>
+      </div>
+      <div id="profile-container" style="display:none;">
+        <!-- Profile Card -->
+        <div class="profile-card">
+          <div class="profile-avatar" id="p-avatar">?</div>
+          <div class="profile-info">
+            <div class="profile-name" id="p-name">—</div>
+            <div class="profile-username" id="p-username">—</div>
+            <div id="p-badge" class="profile-badge pb-user">
+              <i class="fa-solid fa-user"></i> User
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-val" id="p-files">—</div>
+            <div class="stat-label">Files</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val" id="p-bw-used">—</div>
+            <div class="stat-label">BW Used</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val" id="p-bw-limit">—</div>
+            <div class="stat-label">BW Limit</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val" id="p-status-val">Active</div>
+            <div class="stat-label">Status</div>
+          </div>
+        </div>
+
+        <!-- Blocked banner if needed -->
+        <div id="p-blocked-banner" class="blocked-banner" style="display:none;">
+          <div class="blocked-banner-icon"><i class="fa-solid fa-ban"></i></div>
+          <div class="blocked-banner-text">
+            <h3>Access Restricted</h3>
+            <p>Streaming and downloading are currently blocked for your account. Contact an admin to restore access.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Bandwidth Tab ──────────────────────────────────── -->
+    <div class="twa-panel" id="panel-bandwidth">
+      <div id="bw-loading" class="loading-wrap">
+        <div class="loading-spinner"></div>
+        <p>Loading bandwidth info…</p>
+      </div>
+      <div id="bw-container" style="display:none;">
+
+        <!-- Global BW -->
+        <div class="bw-card">
+          <div class="bw-card-title">
+            <i class="fa-solid fa-satellite-dish" style="color:var(--accent)"></i>
+            Global Bandwidth
+          </div>
+          <div class="bw-row">
+            <span>Used</span>
+            <span id="gbw-used">—</span>
+          </div>
+          <div class="bw-row">
+            <span>Limit</span>
+            <span id="gbw-limit">—</span>
+          </div>
+          <div class="bw-row">
+            <span>Remaining</span>
+            <span id="gbw-remaining">—</span>
+          </div>
+          <div class="bw-bar-bg">
+            <div class="bw-bar-fill" id="gbw-bar" style="width:0%"></div>
+          </div>
+          <div class="bw-row" style="font-size:.68rem; margin-top:2px;">
+            <span id="gbw-pct-txt">0%</span>
+            <span id="gbw-today">Today: —</span>
+          </div>
+          <div class="bw-reset-row">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            Resets in: <span class="bw-reset-time" id="gbw-reset">—</span>
+          </div>
+        </div>
+
+        <!-- Per-user BW (if limited) -->
+        <div class="bw-card" id="user-bw-card" style="display:none;">
+          <div class="bw-card-title">
+            <i class="fa-solid fa-user" style="color:#43e97b"></i>
+            Your Bandwidth
+          </div>
+          <div class="bw-row">
+            <span>Used</span>
+            <span id="ubw-used">—</span>
+          </div>
+          <div class="bw-row">
+            <span>Limit</span>
+            <span id="ubw-limit">—</span>
+          </div>
+          <div class="bw-bar-bg">
+            <div class="bw-bar-fill" id="ubw-bar" style="width:0%"></div>
+          </div>
+          <div class="bw-row" style="font-size:.68rem; margin-top:2px;">
+            <span id="ubw-pct-txt">0%</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Toast -->
+<div class="toast-wrap">
+  <div class="toast" id="toast">
+    <i class="fa-solid fa-check" id="toast-icon"></i>
+    <span id="toast-msg">Done</span>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ── Telegram Web App init ──────────────────────────────────
+const tg      = window.Telegram?.WebApp;
+let   _initData = '';
+let   _userData = null;
+let   _authData = null;
+
+if (tg) {
+  tg.ready();
+  tg.expand();
+  tg.setHeaderColor('secondary_bg_color');
+  tg.setBackgroundColor('bg_color');
+  _initData = tg.initData || '';
+  _userData = tg.initDataUnsafe?.user || null;
+}
+
+// ── State ──────────────────────────────────────────────────
+let _currentPage   = 1;
+let _totalPages    = 1;
+let _bwSecondsLeft = 0;
+let _bwCountdown   = null;
+let _activeTab     = 'files';
+let _isBlocked     = false;
+
+// ── Tab switching ──────────────────────────────────────────
+function showTab(name) {
+  _activeTab = name;
+  document.querySelectorAll('.twa-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.twa-tab').forEach(b => b.classList.remove('active'));
+  const panel = document.getElementById('panel-' + name);
+  const tab   = document.querySelector(`[data-tab="${name}"]`);
+  if (panel) panel.classList.add('active');
+  if (tab)   tab.classList.add('active');
+  tg?.HapticFeedback?.impactOccurred('light');
+  if (name === 'bandwidth') loadBandwidth();
+}
+
+// ── Auth / Init ────────────────────────────────────────────
+async function init() {
+  if (!_initData) {
+    // Dev fallback: show without auth (for browser testing)
+    showToast('No Telegram context', 'fa-triangle-exclamation');
+    showFilesEmpty();
+    updateHeader('Guest', 'Open in Telegram app');
+    return;
+  }
+
+  try {
+    const r = await fetch('/api/twa/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initData: _initData }),
+    });
+    if (!r.ok) {
+      const err = await r.json();
+      showToast(err.error || 'Auth failed', 'fa-circle-xmark');
+      showFilesEmpty();
+      return;
+    }
+    _authData = await r.json();
+
+    const user    = _authData.user || {};
+    const limits  = _authData.limits || {};
+    const gbw     = _authData.global_bandwidth || {};
+    _isBlocked    = !limits.allowed || user.is_blocked;
+
+    // Update header
+    const firstName = user.first_name || _userData?.first_name || 'User';
+    updateHeader(firstName, '@{{ bot_username }}');
+
+    // Update avatar
+    const av = document.getElementById('user-avatar');
+    if (av) av.textContent = firstName.charAt(0).toUpperCase();
+
+    // Store reset time for countdown
+    _bwSecondsLeft = gbw.seconds_until_reset || 0;
+    startBwCountdown();
+
+    // Load files (or show blocked)
+    if (_isBlocked) {
+      showFilesBlocked(limits);
+    } else {
+      loadFiles(1);
+    }
+
+    // Populate profile
+    populateProfile(user, limits, gbw);
+    populateBandwidth(limits, gbw);
+
+  } catch(e) {
+    console.error('Init error', e);
+    showToast('Connection error', 'fa-circle-xmark');
+    showFilesEmpty();
+  }
+}
+
+// ── Files ──────────────────────────────────────────────────
+async function loadFiles(page = 1) {
+  _currentPage = page;
+  setFilesState('loading');
+
+  try {
+    const r = await fetch(`/api/twa/files?page=${page}&limit=15`, {
+      headers: { 'X-TWA-InitData': _initData },
+    });
+
+    if (r.status === 403) {
+      const err = await r.json();
+      showFilesBlocked({ reason: err.reason });
+      return;
+    }
+
+    if (!r.ok) throw new Error(r.statusText);
+    const data = await r.json();
+
+    if (!data.ok) throw new Error(data.error || 'Unknown error');
+
+    _totalPages = data.pages || 1;
+    const files  = data.files || [];
+
+    if (files.length === 0 && page === 1) {
+      setFilesState('empty');
+      return;
+    }
+
+    renderFiles(files, data.total, data.page, data.pages);
+    setFilesState('list');
+
+  } catch(e) {
+    console.error('loadFiles error', e);
+    showToast('Failed to load files', 'fa-circle-xmark');
+    setFilesState('empty');
+  }
+}
+
+function renderFiles(files, total, page, pages) {
+  const list = document.getElementById('files-list');
+  if (!list) return;
+
+  // Count label
+  const countLbl = document.getElementById('files-count-label');
+  if (countLbl) countLbl.textContent = `${total} File${total !== 1 ? 's' : ''}`;
+
+  // Pagination info
+  const pageInfoEl = document.getElementById('files-page-info');
+  if (pageInfoEl) pageInfoEl.textContent = pages > 1 ? `Page ${page} of ${pages}` : '';
+
+  list.innerHTML = files.map(f => {
+    const typeClass = { video:'fti-video', audio:'fti-audio', image:'fti-image' }[f.file_type] || 'fti-doc';
+    const typeIcon  = { video:'fa-film', audio:'fa-music', image:'fa-image' }[f.file_type] || 'fa-file';
+    const badgeClass = { video:'fb-video', audio:'fb-audio', image:'fb-image' }[f.file_type] || 'fb-doc';
+    const typeLabel  = (f.file_type||'doc').toUpperCase();
+    const dateStr    = f.created_at ? new Date(f.created_at).toLocaleDateString('en', {month:'short',day:'numeric'}) : '';
+    const canStream  = f.file_type === 'video' || f.file_type === 'audio';
+    const streamBtn  = canStream
+      ? `<button class="file-action-btn fab-stream" onclick="streamFile('${f.file_id}','${encodeURIComponent(f.file_name)}')"><i class="fa-solid fa-play"></i> Stream</button>`
+      : `<button class="file-action-btn fab-stream" onclick="streamFile('${f.file_id}','${encodeURIComponent(f.file_name)}')"><i class="fa-solid fa-eye"></i> View</button>`;
+
+    return `
+      <div class="file-card">
+        <div class="file-card-top">
+          <div class="file-type-icon ${typeClass}"><i class="fa-solid ${typeIcon}"></i></div>
+          <div class="file-info">
+            <div class="file-name">${escHtml(f.file_name)}</div>
+            <div class="file-meta">
+              <span>${f.file_size_fmt}</span>
+              ${dateStr ? `<span class="file-meta-dot">·</span><span>${dateStr}</span>` : ''}
+            </div>
+          </div>
+          <span class="file-badge ${badgeClass}">${typeLabel}</span>
+        </div>
+        <div class="file-card-actions">
+          ${streamBtn}
+          <button class="file-action-btn fab-download" onclick="downloadFile('${f.file_id}','${encodeURIComponent(f.file_name)}')">
+            <i class="fa-solid fa-cloud-arrow-down"></i> Download
+          </button>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Pagination
+  const pag = document.getElementById('pagination');
+  const pInfo = document.getElementById('page-info-txt');
+  const prevBtn = document.getElementById('prev-btn');
+  const nextBtn = document.getElementById('next-btn');
+  if (pag) pag.style.display = pages > 1 ? 'flex' : 'none';
+  if (pInfo) pInfo.textContent = `${page} / ${pages}`;
+  if (prevBtn) prevBtn.disabled = page <= 1;
+  if (nextBtn) nextBtn.disabled = page >= pages;
+}
+
+function changePage(delta) {
+  const newPage = _currentPage + delta;
+  if (newPage < 1 || newPage > _totalPages) return;
+  tg?.HapticFeedback?.impactOccurred('light');
+  loadFiles(newPage);
+  document.getElementById('panel-files')?.scrollTo(0, 0);
+}
+
+function setFilesState(state) {
+  const loading  = document.getElementById('files-loading');
+  const blocked  = document.getElementById('files-blocked');
+  const container= document.getElementById('files-container');
+  const empty    = document.getElementById('files-empty');
+  [loading, blocked, container, empty].forEach(el => { if (el) el.style.display = 'none'; });
+  if (state === 'loading'  && loading)   loading.style.display   = 'flex';
+  if (state === 'blocked'  && blocked)   blocked.style.display   = 'flex';
+  if (state === 'list'     && container) container.style.display = 'block';
+  if (state === 'empty'    && empty)     empty.style.display     = 'flex';
+}
+
+function showFilesBlocked(info) {
+  setFilesState('blocked');
+  const reasonEl = document.getElementById('blocked-reason');
+  const reasons = {
+    'bandwidth_exceeded':  'Your bandwidth limit has been reached. Access will restore when your limit resets or an admin updates it.',
+    'file_limit_exceeded': 'You have reached your file limit.',
+    'blocked_by_admin':    'Your access has been restricted by an administrator.',
+    'global_bw_exceeded':  'Global bandwidth limit reached. Please try again later.',
+  };
+  if (reasonEl) reasonEl.textContent = reasons[info?.reason] || 'Access is currently restricted.';
+}
+
+function showFilesEmpty() {
+  setFilesState('empty');
+}
+
+// ── File Actions ───────────────────────────────────────────
+function streamFile(fileId, fileName) {
+  tg?.HapticFeedback?.impactOccurred('medium');
+  const url = '/stream/' + fileId;
+  if (tg) {
+    tg.openLink(location.origin + url);
+  } else {
+    window.open(url, '_blank');
+  }
+  showToast('Opening stream…', 'fa-play');
+}
+
+function downloadFile(fileId, fileName) {
+  tg?.HapticFeedback?.impactOccurred('medium');
+  const url = '/dl/' + fileId;
+  if (tg) {
+    tg.openLink(location.origin + url);
+  } else {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = decodeURIComponent(fileName);
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+  showToast('Download starting…', 'fa-cloud-arrow-down');
+}
+
+// ── Profile ────────────────────────────────────────────────
+function populateProfile(user, limits, gbw) {
+  const loading   = document.getElementById('profile-loading');
+  const container = document.getElementById('profile-container');
+  if (loading)   loading.style.display   = 'none';
+  if (container) container.style.display = 'block';
+
+  const firstName = user.first_name || 'User';
+  const lastName  = user.last_name  || '';
+  const username  = user.username   ? '@' + user.username : user.id || '';
+
+  const avatarEl   = document.getElementById('p-avatar');
+  const nameEl     = document.getElementById('p-name');
+  const usernameEl = document.getElementById('p-username');
+  const badgeEl    = document.getElementById('p-badge');
+  const filesEl    = document.getElementById('p-files');
+  const bwUsedEl   = document.getElementById('p-bw-used');
+  const bwLimitEl  = document.getElementById('p-bw-limit');
+  const statusEl   = document.getElementById('p-status-val');
+  const blockedEl  = document.getElementById('p-blocked-banner');
+
+  if (avatarEl)   avatarEl.textContent   = firstName.charAt(0).toUpperCase();
+  if (nameEl)     nameEl.textContent     = firstName + (lastName ? ' ' + lastName : '');
+  if (usernameEl) usernameEl.textContent = username;
+
+  if (badgeEl) {
+    if (user.is_owner)   { badgeEl.className = 'profile-badge pb-owner'; badgeEl.innerHTML = '<i class="fa-solid fa-crown"></i> Owner'; }
+    else if (user.is_sudo){ badgeEl.className = 'profile-badge pb-owner'; badgeEl.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Admin'; }
+    else if (user.is_blocked){ badgeEl.className = 'profile-badge pb-blocked'; badgeEl.innerHTML = '<i class="fa-solid fa-ban"></i> Blocked'; }
+    else                 { badgeEl.className = 'profile-badge pb-user';  badgeEl.innerHTML = '<i class="fa-solid fa-user"></i> User'; }
+  }
+
+  if (filesEl)    filesEl.textContent    = limits.files_used ?? '—';
+  if (bwUsedEl)   bwUsedEl.textContent   = limits.bw_used_fmt   || '0 B';
+  if (bwLimitEl)  bwLimitEl.textContent  = limits.bw_limit_fmt  || 'Unlimited';
+  if (statusEl)   statusEl.textContent   = user.is_blocked ? '🚫 Blocked' : '✅ Active';
+
+  if (blockedEl) blockedEl.style.display = (user.is_blocked || !limits.allowed) ? 'flex' : 'none';
+}
+
+// ── Bandwidth ──────────────────────────────────────────────
+async function loadBandwidth() {
+  if (_authData) {
+    const limits = _authData.limits  || {};
+    const gbw    = _authData.global_bandwidth || {};
+    populateBandwidth(limits, gbw);
+    return;
+  }
+  // Fallback: hit the public bandwidth endpoint
+  try {
+    const r = await fetch('/api/bandwidth');
+    if (!r.ok) return;
+    const d = await r.json();
+    const f = d.formatted || {};
+    const loading  = document.getElementById('bw-loading');
+    const container= document.getElementById('bw-container');
+    if (loading)   loading.style.display   = 'none';
+    if (container) container.style.display = 'block';
+    const pct = d.percentage ?? 0;
+    _setEl('gbw-used',      f.total_bandwidth ?? '—');
+    _setEl('gbw-limit',     f.limit ?? '—');
+    _setEl('gbw-remaining', f.remaining ?? '—');
+    _setEl('gbw-today',     'Today: ' + (f.today_bandwidth ?? '—'));
+    _setEl('gbw-pct-txt',   pct + '%');
+    _setEl('gbw-reset',     f.reset_in ?? '—');
+    const bar = document.getElementById('gbw-bar');
+    if (bar) { bar.style.width = pct + '%'; bar.className = 'bw-bar-fill' + (pct > 90 ? ' crit' : pct > 70 ? ' warn' : ''); }
+    _bwSecondsLeft = d.seconds_until_reset || 0;
+    startBwCountdown();
+  } catch(e) { console.warn('loadBandwidth failed', e); }
+}
+
+function populateBandwidth(limits, gbw) {
+  const loading   = document.getElementById('bw-loading');
+  const container = document.getElementById('bw-container');
+  if (loading)   loading.style.display   = 'none';
+  if (container) container.style.display = 'block';
+
+  const pct = gbw.pct ?? 0;
+  _setEl('gbw-used',      gbw.used      ?? '—');
+  _setEl('gbw-limit',     gbw.limit     ?? '—');
+  _setEl('gbw-remaining', gbw.remaining ?? '—');
+  _setEl('gbw-today',     'Today: ' + (gbw.today ?? '—'));
+  _setEl('gbw-pct-txt',   pct + '%');
+  _setEl('gbw-reset',     gbw.reset_in  ?? '—');
+
+  const bar = document.getElementById('gbw-bar');
+  if (bar) {
+    bar.style.width = pct + '%';
+    bar.className = 'bw-bar-fill' + (pct > 90 ? ' crit' : pct > 70 ? ' warn' : '');
+  }
+
+  // Per-user bandwidth
+  const ubwCard = document.getElementById('user-bw-card');
+  if (limits.bw_limit > 0 && ubwCard) {
+    ubwCard.style.display = 'block';
+    const ubwPct = limits.bw_limit > 0 ? Math.min(100, (limits.bw_used / limits.bw_limit) * 100) : 0;
+    _setEl('ubw-used',    limits.bw_used_fmt   || '—');
+    _setEl('ubw-limit',   limits.bw_limit_fmt  || '—');
+    _setEl('ubw-pct-txt', ubwPct.toFixed(1) + '%');
+    const ubar = document.getElementById('ubw-bar');
+    if (ubar) {
+      ubar.style.width = ubwPct + '%';
+      ubar.className = 'bw-bar-fill' + (ubwPct > 90 ? ' crit' : ubwPct > 70 ? ' warn' : '');
+    }
+  }
+
+  _bwSecondsLeft = gbw.seconds_until_reset || 0;
+  startBwCountdown();
+}
+
+// ── BW Countdown ───────────────────────────────────────────
+function _fmtCountdown(s) {
+  if (s <= 0) return 'Overdue';
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (d > 0 && h > 0) return d + 'd ' + h + 'h';
+  if (d > 0) return d + 'd';
+  if (h > 0 && m > 0) return h + 'h ' + m + 'm';
+  if (h > 0) return h + 'h';
+  return m + 'm ' + (s % 60) + 's';
+}
+
+function startBwCountdown() {
+  if (_bwCountdown) clearInterval(_bwCountdown);
+  _updateBwCountdown();
+  _bwCountdown = setInterval(() => {
+    if (_bwSecondsLeft > 0) { _bwSecondsLeft--; _updateBwCountdown(); }
+  }, 1000);
+}
+
+function _updateBwCountdown() {
+  const el = document.getElementById('gbw-reset');
+  if (el) el.textContent = _fmtCountdown(_bwSecondsLeft);
+}
+
+// ── Header ─────────────────────────────────────────────────
+function updateHeader(name, sub) {
+  const subEl = document.getElementById('header-sub');
+  if (subEl) subEl.textContent = sub || '';
+}
+
+// ── Helpers ────────────────────────────────────────────────
+function _setEl(id, text) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = text;
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+let _toastTimer;
+function showToast(msg, icon = 'fa-check') {
+  const t  = document.getElementById('toast');
+  const ic = document.getElementById('toast-icon');
+  const m  = document.getElementById('toast-msg');
+  if (!t) return;
+  if (ic) ic.className = 'fa-solid ' + icon;
+  if (m)  m.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── Boot ───────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>

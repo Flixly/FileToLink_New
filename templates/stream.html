@@ -792,62 +792,67 @@
       display: none;
       position: fixed;
       inset: 0;
-      z-index: 9990;
+      z-index: 10000;   /* above everything else */
       background: transparent;
       cursor: default;
       touch-action: none;
     }
     .settings-layer.active { display: block; }
 
-    /* ── Settings popup — YouTube-style premium redesign ─────────
-       Desktop: absolute bottom-right above ctrl-bar.
-       Mobile: fixed bottom sheet with slide-up animation.
-       Always uses fixed positioning to escape player stacking context.
-    ────────────────────────────────────────────────────────── */
+    /* ── Settings popup ──────────────────────────────────────────
+       FIXED: Use position:fixed always (escapes all stacking contexts).
+       Desktop: anchored bottom-right via JS to sit above the ctrl-bar.
+       Mobile:  full-width bottom sheet that slides up.
+       z-index 10001 sits above the settings-layer (10000) so the popup
+       itself still receives pointer events even when the layer is active.
+    ─────────────────────────────────────────────────────────────── */
     .settings-popup {
       position: fixed;
-      bottom: 70px;
-      right: 16px;
+      bottom: 76px;
+      right: 12px;
       background: var(--popup-bg);
       border: 1px solid var(--popup-border);
       border-radius: 18px;
       box-shadow: var(--popup-shadow);
       padding: 0;
-      min-width: 290px;
+      min-width: 296px;
       max-width: min(340px, calc(100vw - 24px));
-      z-index: 9999;
+      z-index: 10001;  /* above settings-layer */
       opacity: 0;
-      transform: translateY(12px) scale(.96);
+      transform: translateY(10px) scale(.97);
       pointer-events: none;
-      transition: opacity .22s ease, transform .25s cubic-bezier(.34,1.56,.64,1);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
+      transition: opacity .22s ease, transform .24s cubic-bezier(.34,1.56,.64,1);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
       isolation: isolate;
       overflow: hidden;
+      /* Prevent the popup from accidentally inheriting a stacking context */
+      will-change: transform, opacity;
     }
 
-    /* Mobile: bottom sheet */
+    /* Mobile: full-width bottom sheet */
     @media (max-width: 600px) {
       .settings-popup {
-        position: fixed;
-        bottom: 0; left: 0; right: 0; top: auto;
-        border-radius: 22px 22px 0 0;
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        top: auto !important;
+        border-radius: 24px 24px 0 0;
         min-width: unset;
         max-width: 100vw;
         padding: 0;
         transform: translateY(100%);
-        max-height: 82vh;
+        max-height: 85vh;
         overflow: hidden;
-        z-index: 9999;
-        transition: opacity .25s ease, transform .3s cubic-bezier(.22,.61,.36,1);
+        z-index: 10001;
+        transition: opacity .25s ease, transform .32s cubic-bezier(.22,.61,.36,1);
         display: flex;
         flex-direction: column;
       }
     }
     @media (max-width: 600px) and (orientation: portrait) {
-      .settings-popup {
-        max-height: 80vh;
-      }
+      .settings-popup { max-height: 80vh; }
     }
 
     .settings-popup.open {
@@ -1256,13 +1261,22 @@
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,.6);
-      z-index: 9991;
+      background: rgba(0,0,0,.55);
+      /* sits just BELOW the settings-layer so layer blocks player
+         but the overlay provides the visual backdrop */
+      z-index: 9999;
       pointer-events: none;
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+      transition: opacity .25s ease;
     }
     .settings-overlay.active {
       display: block;
       pointer-events: auto;
+    }
+    /* On desktop we don't show the backdrop blur */
+    @media (min-width: 601px) {
+      .settings-overlay { background: transparent; backdrop-filter: none; }
     }
 
     /* non-video file card */
@@ -2377,23 +2391,42 @@
     const popup   = document.getElementById('settings-popup');
     const overlay = document.getElementById('settings-overlay');
     const layer   = document.getElementById('settings-layer');
-    if (popup)   popup.classList.add('open');
-    if (overlay) overlay.classList.add('active');
-    if (layer)   layer.classList.add('active');
     settingsOpen = true;
     _showPanel('main');
     activeSubPanel = null;
+
+    // Position popup BEFORE adding .open so dimensions are stable
+    if (popup && window.innerWidth > 600) {
+      const btn = document.getElementById('settings-btn');
+      if (btn) {
+        const btnRect    = btn.getBoundingClientRect();
+        const popupW     = 320;  // known min-width
+        const spaceRight = window.innerWidth - btnRect.right;
+        const spaceLeft  = btnRect.left;
+
+        // Prefer right-aligned, fallback to left if near right edge
+        let rightVal = Math.max(8, window.innerWidth - btnRect.right);
+        // If popup would clip the left edge, shift it
+        if (btnRect.right - popupW < 8) rightVal = window.innerWidth - popupW - 8;
+
+        popup.style.bottom = (window.innerHeight - btnRect.top + 10) + 'px';
+        popup.style.right  = rightVal + 'px';
+        popup.style.top    = 'auto';
+        popup.style.left   = 'auto';
+      }
+    } else if (popup) {
+      // Mobile: reset inline styles so CSS bottom-sheet takes over
+      popup.style.bottom = '';
+      popup.style.right  = '';
+      popup.style.top    = '';
+      popup.style.left   = '';
+    }
+
+    if (popup)   popup.classList.add('open');
+    if (overlay) overlay.classList.add('active');
+    if (layer)   layer.classList.add('active');
     const btn = document.getElementById('settings-btn');
     if (btn) btn.classList.add('active');
-
-    // On desktop: position popup above settings button
-    if (popup && window.innerWidth > 600 && btn) {
-      const btnRect = btn.getBoundingClientRect();
-      popup.style.bottom  = (window.innerHeight - btnRect.top + 8) + 'px';
-      popup.style.right   = (window.innerWidth - btnRect.right + 0) + 'px';
-      popup.style.top     = 'auto';
-      popup.style.left    = 'auto';
-    }
   }
 
   function closeSettings() {

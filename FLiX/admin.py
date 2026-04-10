@@ -641,3 +641,282 @@ async def logs_command(client: Client, message: Message):
                 text=f"❌ **{small_caps('error reading logs')}:** `{exc2}`",
                 reply_to_message_id=message.id,
             )
+
+
+# ═══════════════════════════════════════════════════════════════
+#   USER LIMIT / BLOCK MANAGEMENT COMMANDS
+# ═══════════════════════════════════════════════════════════════
+
+@Client.on_message(filters.command("block_user") & filters.private, group=2)
+async def block_user_command(client: Client, message: Message):
+    """Block a user's access to streaming and downloading."""
+    if not await check_owner(client, message):
+        return
+
+    if len(message.command) < 2:
+        await client.send_message(
+            chat_id=message.chat.id,
+            text=(
+                f"❌ **{small_caps('usage')}**\n\n"
+                f"`/block_user <user_id> [reason]`\n\n"
+                f"{small_caps('example')}: `/block_user 123456789 spam`"
+            ),
+            reply_to_message_id=message.id,
+        )
+        return
+
+    target_id = message.command[1]
+    reason    = " ".join(message.command[2:]) if len(message.command) > 2 else "admin_decision"
+
+    if not target_id.lstrip("-").isdigit():
+        await client.send_message(
+            chat_id=message.chat.id,
+            text=f"❌ **{small_caps('invalid user id')}**",
+            reply_to_message_id=message.id,
+        )
+        return
+
+    ok = await db.set_user_blocked(target_id, True, reason)
+    if ok:
+        text = (
+            f"🚫 **{small_caps('user blocked')}**\n\n"
+            f"👤 **{small_caps('user id')}:** `{target_id}`\n"
+            f"📝 **{small_caps('reason')}:** `{reason}`\n\n"
+            f"⚡ {small_caps('streaming and downloading blocked immediately.')}"
+        )
+        # Notify the user
+        try:
+            await client.send_message(
+                chat_id=int(target_id),
+                text=(
+                    f"🚫 **{small_caps('access restricted')}**\n\n"
+                    "ʏᴏᴜʀ ᴀᴄᴄᴇꜱꜱ ʜᴀꜱ ʙᴇᴇɴ **ʀᴇꜱᴛʀɪᴄᴛᴇᴅ** ʙʏ ᴀɴ ᴀᴅᴍɪɴɪꜱᴛʀᴀᴛᴏʀ.\n"
+                    "📩 ᴄᴏɴᴛᴀᴄᴛ ꜱᴜᴘᴘᴏʀᴛ ɪꜰ ʏᴏᴜ ʙᴇʟɪᴇᴠᴇ ᴛʜɪꜱ ɪꜱ ᴀ ᴍɪꜱᴛᴀᴋᴇ."
+                ),
+            )
+        except Exception:
+            pass  # user may have blocked the bot
+    else:
+        text = f"❌ **{small_caps('failed to block user')}** `{target_id}`"
+
+    await client.send_message(
+        chat_id=message.chat.id,
+        text=text,
+        reply_to_message_id=message.id,
+    )
+
+
+@Client.on_message(filters.command("unblock_user") & filters.private, group=2)
+async def unblock_user_command(client: Client, message: Message):
+    """Unblock a user and restore access."""
+    if not await check_owner(client, message):
+        return
+
+    if len(message.command) < 2:
+        await client.send_message(
+            chat_id=message.chat.id,
+            text=(
+                f"❌ **{small_caps('usage')}**\n\n"
+                f"`/unblock_user <user_id>`"
+            ),
+            reply_to_message_id=message.id,
+        )
+        return
+
+    target_id = message.command[1]
+    if not target_id.lstrip("-").isdigit():
+        await client.send_message(
+            chat_id=message.chat.id,
+            text=f"❌ **{small_caps('invalid user id')}**",
+            reply_to_message_id=message.id,
+        )
+        return
+
+    ok = await db.set_user_blocked(target_id, False)
+    # Also reset bandwidth block state
+    await db.set_user_warn_sent(target_id, False)
+    if ok:
+        text = (
+            f"✅ **{small_caps('user unblocked')}**\n\n"
+            f"👤 **{small_caps('user id')}:** `{target_id}`\n"
+            f"⚡ {small_caps('access restored immediately.')}"
+        )
+        try:
+            await client.send_message(
+                chat_id=int(target_id),
+                text=(
+                    f"✅ **{small_caps('access restored')}**\n\n"
+                    "ʏᴏᴜʀ ᴀᴄᴄᴇꜱꜱ ʜᴀꜱ ʙᴇᴇɴ **ʀᴇꜱᴛᴏʀᴇᴅ** ʙʏ ᴀɴ ᴀᴅᴍɪɴɪꜱᴛʀᴀᴛᴏʀ.\n"
+                    "ʏᴏᴜ ᴄᴀɴ ɴᴏᴡ ꜱᴛʀᴇᴀᴍ ᴀɴᴅ ᴅᴏᴡɴʟᴏᴀᴅ ᴀɢᴀɪɴ. 🎉"
+                ),
+            )
+        except Exception:
+            pass
+    else:
+        text = f"❌ **{small_caps('failed to unblock user')}** `{target_id}`"
+
+    await client.send_message(
+        chat_id=message.chat.id,
+        text=text,
+        reply_to_message_id=message.id,
+    )
+
+
+@Client.on_message(filters.command("set_user_limit") & filters.private, group=2)
+async def set_user_limit_command(client: Client, message: Message):
+    """Set per-user bandwidth/file limit. Usage: /set_user_limit <user_id> bw=<bytes> files=<count>"""
+    if not await check_owner(client, message):
+        return
+
+    if len(message.command) < 2:
+        await client.send_message(
+            chat_id=message.chat.id,
+            text=(
+                f"❌ **{small_caps('usage')}**\n\n"
+                f"`/set_user_limit <user_id> [bw=<bytes>] [files=<count>]`\n\n"
+                f"**{small_caps('examples')}:**\n"
+                f"`/set_user_limit 123 bw=10737418240`  — 10 GB bandwidth\n"
+                f"`/set_user_limit 123 files=100`        — 100 files max\n"
+                f"`/set_user_limit 123 bw=0 files=0`     — reset to unlimited"
+            ),
+            reply_to_message_id=message.id,
+        )
+        return
+
+    target_id   = message.command[1]
+    max_bw      = 0
+    max_files   = 0
+
+    for arg in message.command[2:]:
+        if arg.startswith("bw="):
+            try: max_bw = int(arg[3:])
+            except: pass
+        elif arg.startswith("files="):
+            try: max_files = int(arg[6:])
+            except: pass
+
+    ok = await db.set_user_limit(target_id, max_bw, max_files)
+    if ok:
+        bw_str    = format_size(max_bw)    if max_bw    else "Unlimited"
+        files_str = str(max_files)         if max_files else "Unlimited"
+        text = (
+            f"✅ **{small_caps('user limit set')}**\n\n"
+            f"👤 **{small_caps('user id')}:**     `{target_id}`\n"
+            f"📡 **{small_caps('bw limit')}:**    `{bw_str}`\n"
+            f"📂 **{small_caps('file limit')}:**  `{files_str}`"
+        )
+    else:
+        text = f"❌ **{small_caps('failed to set limit')}** for `{target_id}`"
+
+    await client.send_message(
+        chat_id=message.chat.id,
+        text=text,
+        reply_to_message_id=message.id,
+    )
+
+
+@Client.on_message(filters.command("user_info") & filters.private, group=2)
+async def user_info_command(client: Client, message: Message):
+    """Show a user's bandwidth and limit status."""
+    if not await check_owner(client, message):
+        return
+
+    if len(message.command) < 2:
+        await client.send_message(
+            chat_id=message.chat.id,
+            text=f"❌ **{small_caps('usage')}**: `/user_info <user_id>`",
+            reply_to_message_id=message.id,
+        )
+        return
+
+    target_id = message.command[1]
+    user      = await db.get_user(target_id)
+    lim       = await db.check_user_limit(target_id)
+    ubw       = await db.get_user_bandwidth(target_id)
+
+    if not user:
+        await client.send_message(
+            chat_id=message.chat.id,
+            text=f"❌ **{small_caps('user not found')}**: `{target_id}`",
+            reply_to_message_id=message.id,
+        )
+        return
+
+    blocked    = user.get("is_blocked", False)
+    bw_limit   = lim.get("bw_limit",   0)
+    files_limit = lim.get("files_limit", 0)
+    bw_used    = ubw["total_bytes"]
+    files_used = lim.get("files_used", 0)
+    bw_pct     = (bw_used / bw_limit * 100) if bw_limit else 0
+
+    status_icon = "🚫" if blocked else "✅"
+    text = (
+        f"👤 **{small_caps('user info')}**\n\n"
+        f"🆔 **{small_caps('user id')}:**       `{target_id}`\n"
+        f"📛 **{small_caps('name')}:**          `{user.get('first_name', '')} {user.get('last_name', '')}`\n"
+        f"🔗 **{small_caps('username')}:**      `@{user.get('username', 'N/A')}`\n\n"
+        f"{status_icon} **{small_caps('status')}:**       {'🚫 ʙʟᴏᴄᴋᴇᴅ' if blocked else '✅ ᴀᴄᴛɪᴠᴇ'}\n"
+        f"📡 **{small_caps('bw used')}:**      `{format_size(bw_used)}`\n"
+        f"🔒 **{small_caps('bw limit')}:**     `{format_size(bw_limit) if bw_limit else 'Unlimited'}`\n"
+        f"📊 **{small_caps('bw usage')}:**     `{bw_pct:.1f}%`\n"
+        f"📂 **{small_caps('files')}:**        `{files_used}` / `{files_limit if files_limit else 'Unlimited'}`\n"
+    )
+
+    buttons = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(
+                f"{'✅ Unblock' if blocked else '🚫 Block'}",
+                callback_data=f"{'unblock' if blocked else 'block'}_{target_id}",
+            ),
+            InlineKeyboardButton("♻️ Reset BW", callback_data=f"reset_ubw_{target_id}"),
+        ],
+    ])
+
+    await client.send_message(
+        chat_id=message.chat.id,
+        text=text,
+        reply_to_message_id=message.id,
+        reply_markup=buttons,
+    )
+
+
+@Client.on_callback_query(filters.regex(r"^(block|unblock)_(\d+)$"), group=2)
+async def block_unblock_callback(client: Client, callback: CallbackQuery):
+    if not await check_owner(client, callback):
+        return
+    parts     = callback.data.split("_", 1)
+    action    = parts[0]
+    target_id = parts[1]
+    blocked   = action == "block"
+    reason    = "admin_button" if blocked else ""
+    await db.set_user_blocked(target_id, blocked, reason)
+    await callback.answer(
+        f"{'🚫 Blocked' if blocked else '✅ Unblocked'} user {target_id}",
+        show_alert=True,
+    )
+    # Notify user
+    try:
+        msg = (
+            "🚫 **ʏᴏᴜʀ ᴀᴄᴄᴇꜱꜱ ʜᴀꜱ ʙᴇᴇɴ ʀᴇꜱᴛʀɪᴄᴛᴇᴅ ʙʏ ᴀɴ ᴀᴅᴍɪɴ.**"
+            if blocked else
+            "✅ **ʏᴏᴜʀ ᴀᴄᴄᴇꜱꜱ ʜᴀꜱ ʙᴇᴇɴ ʀᴇꜱᴛᴏʀᴇᴅ ʙʏ ᴀɴ ᴀᴅᴍɪɴ.**"
+        )
+        await client.send_message(int(target_id), msg)
+    except Exception:
+        pass
+
+
+@Client.on_callback_query(filters.regex(r"^reset_ubw_(\d+)$"), group=2)
+async def reset_user_bw_callback(client: Client, callback: CallbackQuery):
+    if not await check_owner(client, callback):
+        return
+    target_id = callback.data.replace("reset_ubw_", "")
+    ok = await db.reset_user_bandwidth(target_id)
+    # Also unblock if they were bandwidth-blocked
+    user = await db.get_user(target_id)
+    if user and user.get("blocked_reason", "") in ("bandwidth_exceeded",):
+        await db.set_user_blocked(target_id, False)
+    await callback.answer(
+        f"✅ Bandwidth reset for {target_id}" if ok else f"❌ Failed to reset",
+        show_alert=True,
+    )

@@ -641,11 +641,24 @@ class StreamingService:
                 _file_meta_cache[file_hash]  = file_data
                 _file_cache_atime[file_hash] = now
 
+        # ── Global bandwidth limit ──────────────────────────────────
         if Config.get("bandwidth_mode", True):
             stats  = await self.db.get_bandwidth_stats()
             max_bw = Config.get("max_bandwidth", 107374182400)
             if max_bw and stats["total_bandwidth"] >= max_bw:
                 raise web.HTTPServiceUnavailable(reason="bandwidth limit exceeded")
+
+        # ── Per-user limit (streaming/download gate) ────────────────
+        file_user_id = str(file_data.get("user_id", ""))
+        if file_user_id:
+            user_doc = await self.db.get_user(file_user_id)
+            if user_doc and user_doc.get("is_blocked", False):
+                raise web.HTTPServiceUnavailable(reason="user access restricted")
+            # Also check per-user bandwidth
+            if file_user_id:
+                lim = await self.db.check_user_limit(file_user_id)
+                if not lim.get("allowed", True):
+                    raise web.HTTPServiceUnavailable(reason="user limit exceeded")
 
         file_size  = int(file_data["file_size"])
         file_name  = file_data["file_name"]
