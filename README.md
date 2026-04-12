@@ -386,7 +386,7 @@ pip install -r requirements.txt
 
 ---
 
-## 👨‍💻 Developer
+## 💗 Developer
 
 <div align="center">
 
