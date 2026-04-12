@@ -422,7 +422,9 @@
       border-radius: 24px;
       overflow: hidden;
       user-select: none;
-      isolation: isolate;
+      /* NOTE: isolation:isolate REMOVED — it created a stacking context
+         that trapped position:fixed children (settings-popup/layer).
+         Those elements are now moved to body level. */
     }
 
     .video-wrapper video {
@@ -788,6 +790,7 @@
     .pip-return-btn:active { transform: scale(.97); }
 
     /* ── UI Layer: when settings open, intercept all non-settings clicks ── */
+    /* Moved to body level — lives outside any stacking context */
     .settings-layer {
       display: none;
       position: fixed;
@@ -799,14 +802,14 @@
     }
     .settings-layer.active { display: block; }
 
-    /* ── Settings popup — YouTube-style premium redesign ─────────
-       Desktop: absolute bottom-right above ctrl-bar.
-       Mobile: fixed bottom sheet with slide-up animation.
-       Always uses fixed positioning to escape player stacking context.
+    /* ── Settings popup — lives at body level, fully outside
+       any stacking context (video-wrapper isolation:isolate).
+       Desktop: anchored above settings button via JS.
+       Mobile:  full-width bottom sheet.
     ────────────────────────────────────────────────────────── */
     .settings-popup {
       position: fixed;
-      bottom: 70px;
+      bottom: 80px;
       right: 16px;
       background: var(--popup-bg);
       border: 1px solid var(--popup-border);
@@ -815,6 +818,7 @@
       padding: 0;
       min-width: 290px;
       max-width: min(340px, calc(100vw - 24px));
+      /* Must be above ctrl-bar (z-index ~15) AND above settings-layer (9990) */
       z-index: 9999;
       opacity: 0;
       transform: translateY(12px) scale(.96);
@@ -822,7 +826,7 @@
       transition: opacity .22s ease, transform .25s cubic-bezier(.34,1.56,.64,1);
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
-      isolation: isolate;
+      /* NO isolation: isolate — that would create a new stacking context */
       overflow: hidden;
     }
 
@@ -1235,6 +1239,15 @@
     .speed-chip:hover { background: rgba(102,126,234,.2); color: #667eea; border-color: rgba(102,126,234,.4); }
     .speed-chip.active { background: rgba(102,126,234,.25); color: #667eea; border-color: #667eea; font-weight: 700; }
 
+    /* ── Speed custom section (was missing its selector) ─── */
+    .speed-custom-section {
+      padding: 4px 14px 10px;
+      border-top: 1px solid rgba(255,255,255,.06);
+      margin-top: 4px;
+      grid-column: 1 / -1;
+    }
+    [data-theme="light"] .speed-custom-section { border-color: rgba(0,0,0,.06); }
+
     /* Audio track / subtitle lists (legacy) */
     .track-list { padding: 2px 4px 3px; }
     .track-item {
@@ -1251,18 +1264,9 @@
     .track-item i { font-size: .66rem; width: 13px; color: #667eea; flex-shrink: 0; }
     .no-tracks { padding: 5px 12px 3px; font-size: .73rem; color: var(--text-muted); font-style: italic; }
 
-    /* ── Settings Overlay (mobile backdrop) ────────── */
-    .settings-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,.6);
-      z-index: 9991;
-      pointer-events: none;
-    }
-    .settings-overlay.active {
-      display: block;
-      pointer-events: auto;
+    /* ── Settings layer mobile backdrop tint ────────── */
+    @media (max-width: 600px) {
+      .settings-layer.active { background: rgba(0,0,0,.55); }
     }
 
     /* non-video file card */
@@ -1511,9 +1515,6 @@
     <span></span><span></span><span></span><span></span><span></span>
   </div>
 
-  <!-- Mobile settings overlay (backdrop — mobile only, BEHIND popup) -->
-  <div class="settings-overlay" id="settings-overlay" onclick="closeSettings()"></div>
-
   <div class="container">
 
     <!-- ── Site Header ──────────────────────────────────────── -->
@@ -1607,127 +1608,8 @@
             </div>
           </div>
 
-          <!-- UI layer: blocks all non-settings interactions when menu is open (position:fixed in CSS) -->
-          <div class="settings-layer" id="settings-layer" onclick="closeSettings()"></div>
-
-          <!-- ── Settings popup (position:fixed → escapes stacking context, works on mobile) ── -->
-          <div class="settings-popup" id="settings-popup" role="dialog" aria-label="Player Settings">
-            <div class="settings-drag-handle"></div>
-
-            <!-- Panels container (clipped for slide transitions) -->
-            <div class="settings-panels" id="settings-panels">
-
-              <!-- ── MAIN PANEL ──────────────────────────────────────── -->
-              <div class="settings-panel panel-active" id="panel-main">
-                <div class="settings-header">
-                  <span class="settings-header-title">
-                    <i class="fa-solid fa-sliders"></i> Settings
-                  </span>
-                  <button class="settings-close-btn" onclick="closeSettings()" aria-label="Close settings">
-                    <i class="fa-solid fa-xmark"></i>
-                  </button>
-                </div>
-                <div class="settings-menu-list">
-
-                  <!-- Speed -->
-                  <div class="settings-menu-row" id="row-speed" onclick="openSubPanel('speed')" role="button" tabindex="0">
-                    <div class="settings-menu-icon"><i class="fa-solid fa-gauge-high"></i></div>
-                    <span class="settings-menu-label">Speed</span>
-                    <span class="settings-menu-value" id="speed-main-val">Normal</span>
-                    <i class="fa-solid fa-chevron-right settings-menu-arrow"></i>
-                  </div>
-
-                  <div class="settings-menu-divider"></div>
-
-                  <!-- Audio Track -->
-                  <div class="settings-menu-row" id="row-audio" onclick="openSubPanel('audio')" role="button" tabindex="0">
-                    <div class="settings-menu-icon"><i class="fa-solid fa-volume-high"></i></div>
-                    <span class="settings-menu-label">Audio Track</span>
-                    <span class="settings-menu-value" id="audio-main-val">Default</span>
-                    <i class="fa-solid fa-chevron-right settings-menu-arrow"></i>
-                  </div>
-
-                  <div class="settings-menu-divider"></div>
-
-                  <!-- Subtitles -->
-                  <div class="settings-menu-row" id="row-subs" onclick="openSubPanel('subs')" role="button" tabindex="0">
-                    <div class="settings-menu-icon"><i class="fa-solid fa-closed-captioning"></i></div>
-                    <span class="settings-menu-label">Subtitles</span>
-                    <span class="settings-menu-value" id="subs-main-val">Off</span>
-                    <i class="fa-solid fa-chevron-right settings-menu-arrow"></i>
-                  </div>
-
-                </div>
-              </div><!-- /panel-main -->
-
-              <!-- ── SPEED SUBMENU ─────────────────────────────────── -->
-              <div class="settings-panel panel-hidden-right" id="panel-speed">
-                <div class="settings-sub-header" onclick="closeSubPanel()" role="button" tabindex="0">
-                  <button class="settings-back-btn" aria-label="Back"><i class="fa-solid fa-chevron-left"></i></button>
-                  <span class="settings-sub-title">Playback Speed</span>
-                  <button class="settings-close-btn" onclick="closeSettings()" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-                <div class="settings-sub-list" id="speed-sub-list" style="padding:10px 10px 4px;">
-                  <!-- Horizontal speed grid row -->
-                  <div class="speed-chips-row" id="speed-chips-row">
-                    <button class="speed-chip-btn" data-speed="0.25" onclick="selectSpeedChip(this)">0.25×</button>
-                    <button class="speed-chip-btn" data-speed="0.5" onclick="selectSpeedChip(this)">0.5×</button>
-                    <button class="speed-chip-btn" data-speed="0.75" onclick="selectSpeedChip(this)">0.75×</button>
-                    <button class="speed-chip-btn active" data-speed="1" onclick="selectSpeedChip(this)">1×</button>
-                    <button class="speed-chip-btn" data-speed="1.25" onclick="selectSpeedChip(this)">1.25×</button>
-                    <button class="speed-chip-btn" data-speed="1.5" onclick="selectSpeedChip(this)">1.5×</button>
-                    <button class="speed-chip-btn" data-speed="1.75" onclick="selectSpeedChip(this)">1.75×</button>
-                    <button class="speed-chip-btn" data-speed="2" onclick="selectSpeedChip(this)">2×</button>
-                  </div>
-                  <!-- Custom speed slider in second line -->
-                  <div class="speed-custom-section">
-                    <div class="speed-custom-title">
-                      <span>Custom Speed</span>
-                      <span class="custom-speed-val" id="custom-speed-val">1.0×</span>
-                    </div>
-                    <input type="range" class="custom-speed-slider" id="custom-speed-slider"
-                           min="0.1" max="4" step="0.05" value="1"
-                           aria-label="Custom playback speed"
-                           oninput="onCustomSpeedSlider(this.value)">
-                    <div class="speed-range-hints">
-                      <span>0.1×</span><span>1.0×</span><span>2.0×</span><span>3.0×</span><span>4.0×</span>
-                    </div>
-                  </div>
-                </div>
-              </div><!-- /panel-speed -->
-
-              <!-- ── AUDIO TRACK SUBMENU ───────────────────────────── -->
-              <div class="settings-panel panel-hidden-right" id="panel-audio">
-                <div class="settings-sub-header" onclick="closeSubPanel()" role="button" tabindex="0">
-                  <button class="settings-back-btn" aria-label="Back"><i class="fa-solid fa-chevron-left"></i></button>
-                  <span class="settings-sub-title">Audio Track</span>
-                  <button class="settings-close-btn" onclick="closeSettings()" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-                <div class="settings-sub-list" id="audio-sub-list">
-                  <div class="settings-sub-item sub-active" data-track-index="0">
-                    <div class="sub-item-check"><i class="fa-solid fa-check"></i></div>
-                    <span class="sub-item-label">Default</span>
-                  </div>
-                </div>
-              </div><!-- /panel-audio -->
-
-              <!-- ── SUBTITLES SUBMENU ─────────────────────────────── -->
-              <div class="settings-panel panel-hidden-right" id="panel-subs">
-                <div class="settings-sub-header" onclick="closeSubPanel()" role="button" tabindex="0">
-                  <button class="settings-back-btn" aria-label="Back"><i class="fa-solid fa-chevron-left"></i></button>
-                  <span class="settings-sub-title">Subtitles / Captions</span>
-                  <button class="settings-close-btn" onclick="closeSettings()" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-                <div class="settings-sub-list" id="subs-sub-list">
-                  <div class="settings-sub-item sub-active" id="subs-off-item" onclick="selectSubtitle(null)">
-                    <div class="sub-item-check"><i class="fa-solid fa-check"></i></div>
-                    <span class="sub-item-label">Off</span>
-                  </div>
-                </div>
-              </div><!-- /panel-subs -->
-
-            </div><!-- /settings-panels -->
-          </div><!-- /settings-popup -->
+          <!-- (settings-popup and settings-layer have been moved to body level
+               below the container to escape the video-wrapper stacking context) -->
 
           <!-- ── Controls bar ──────────────────────────────────── -->
           <div class="ctrl-bar" id="ctrl-bar">
@@ -1878,6 +1760,102 @@
     </div>
 
   </div><!-- /container -->
+
+  <!-- ── Settings layer & popup — BODY LEVEL (outside any stacking context) ── -->
+  <!-- backdrop: z-index 9990 → above everything except popup -->
+  <div class="settings-layer" id="settings-layer" onclick="closeSettings()"></div>
+
+  <!-- popup: z-index 9999 -->
+  <div class="settings-popup" id="settings-popup" role="dialog" aria-label="Player Settings">
+    <div class="settings-drag-handle"></div>
+
+    <!-- Panels container (clipped for slide transitions) -->
+    <div class="settings-panels" id="settings-panels">
+
+      <!-- ── MAIN PANEL ──────────────────────────────────────────────── -->
+      <div class="settings-panel panel-active" id="panel-main">
+        <div class="settings-header">
+          <span class="settings-header-title">
+            <i class="fa-solid fa-sliders"></i> Settings
+          </span>
+          <button class="settings-close-btn" onclick="closeSettings()" aria-label="Close settings">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="settings-menu-list">
+
+          <!-- Speed -->
+          <div class="settings-menu-row" id="row-speed" onclick="openSubPanel('speed')" role="button" tabindex="0">
+            <div class="settings-menu-icon"><i class="fa-solid fa-gauge-high"></i></div>
+            <span class="settings-menu-label">Speed</span>
+            <span class="settings-menu-value" id="speed-main-val">Normal</span>
+            <i class="fa-solid fa-chevron-right settings-menu-arrow"></i>
+          </div>
+
+          <div class="settings-menu-divider"></div>
+
+          <!-- Audio Track -->
+          <div class="settings-menu-row" id="row-audio" onclick="openSubPanel('audio')" role="button" tabindex="0">
+            <div class="settings-menu-icon"><i class="fa-solid fa-volume-high"></i></div>
+            <span class="settings-menu-label">Audio Track</span>
+            <span class="settings-menu-value" id="audio-main-val">Default</span>
+            <i class="fa-solid fa-chevron-right settings-menu-arrow"></i>
+          </div>
+
+        </div>
+      </div><!-- /panel-main -->
+
+      <!-- ── SPEED SUBMENU ──────────────────────────────────────────── -->
+      <div class="settings-panel panel-hidden-right" id="panel-speed">
+        <div class="settings-sub-header" onclick="closeSubPanel()" role="button" tabindex="0">
+          <button class="settings-back-btn" aria-label="Back"><i class="fa-solid fa-chevron-left"></i></button>
+          <span class="settings-sub-title">Playback Speed</span>
+          <button class="settings-close-btn" onclick="closeSettings()" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="settings-sub-list" id="speed-sub-list" style="padding:10px 10px 4px;">
+          <div class="speed-chips-row" id="speed-chips-row">
+            <button class="speed-chip-btn" data-speed="0.25" onclick="selectSpeedChip(this)">0.25×</button>
+            <button class="speed-chip-btn" data-speed="0.5"  onclick="selectSpeedChip(this)">0.5×</button>
+            <button class="speed-chip-btn" data-speed="0.75" onclick="selectSpeedChip(this)">0.75×</button>
+            <button class="speed-chip-btn active" data-speed="1" onclick="selectSpeedChip(this)">1×</button>
+            <button class="speed-chip-btn" data-speed="1.25" onclick="selectSpeedChip(this)">1.25×</button>
+            <button class="speed-chip-btn" data-speed="1.5"  onclick="selectSpeedChip(this)">1.5×</button>
+            <button class="speed-chip-btn" data-speed="1.75" onclick="selectSpeedChip(this)">1.75×</button>
+            <button class="speed-chip-btn" data-speed="2"    onclick="selectSpeedChip(this)">2×</button>
+          </div>
+          <div class="speed-custom-section">
+            <div class="speed-custom-title">
+              <span>Custom Speed</span>
+              <span class="custom-speed-val" id="custom-speed-val">1.0×</span>
+            </div>
+            <input type="range" class="custom-speed-slider" id="custom-speed-slider"
+                   min="0.1" max="4" step="0.05" value="1"
+                   aria-label="Custom playback speed"
+                   oninput="onCustomSpeedSlider(this.value)">
+            <div class="speed-range-hints">
+              <span>0.1×</span><span>1.0×</span><span>2.0×</span><span>3.0×</span><span>4.0×</span>
+            </div>
+          </div>
+        </div>
+      </div><!-- /panel-speed -->
+
+      <!-- ── AUDIO TRACK SUBMENU ────────────────────────────────────── -->
+      <div class="settings-panel panel-hidden-right" id="panel-audio">
+        <div class="settings-sub-header" onclick="closeSubPanel()" role="button" tabindex="0">
+          <button class="settings-back-btn" aria-label="Back"><i class="fa-solid fa-chevron-left"></i></button>
+          <span class="settings-sub-title">Audio Track</span>
+          <button class="settings-close-btn" onclick="closeSettings()" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="settings-sub-list" id="audio-sub-list">
+          <div class="settings-sub-item sub-active" data-track-index="0">
+            <div class="sub-item-check"><i class="fa-solid fa-check"></i></div>
+            <span class="sub-item-label">Default</span>
+          </div>
+        </div>
+      </div><!-- /panel-audio -->
+
+    </div><!-- /settings-panels -->
+  </div><!-- /settings-popup -->
 
   <!-- Toast -->
   <div class="toast-wrap">
@@ -2374,41 +2352,47 @@
   }
 
   function openSettings() {
-    const popup   = document.getElementById('settings-popup');
-    const overlay = document.getElementById('settings-overlay');
-    const layer   = document.getElementById('settings-layer');
-    if (popup)   popup.classList.add('open');
-    if (overlay) overlay.classList.add('active');
-    if (layer)   layer.classList.add('active');
+    const popup = document.getElementById('settings-popup');
+    const layer = document.getElementById('settings-layer');
+    const btn   = document.getElementById('settings-btn');
+
+    if (!popup) return;
+    popup.classList.add('open');
+    if (layer) layer.classList.add('active');
+    if (btn)   btn.classList.add('active');
     settingsOpen = true;
     _showPanel('main');
     activeSubPanel = null;
-    const btn = document.getElementById('settings-btn');
-    if (btn) btn.classList.add('active');
 
-    // On desktop: position popup above settings button
-    if (popup && window.innerWidth > 600 && btn) {
+    // Desktop: anchor popup above the settings button.
+    // Popup is now at body level so we use viewport-relative coords directly.
+    if (window.innerWidth > 600 && btn) {
       const btnRect = btn.getBoundingClientRect();
-      popup.style.bottom  = (window.innerHeight - btnRect.top + 8) + 'px';
-      popup.style.right   = (window.innerWidth - btnRect.right + 0) + 'px';
-      popup.style.top     = 'auto';
-      popup.style.left    = 'auto';
+      // Position: bottom edge aligns to top of button, right edge aligns to button right
+      popup.style.bottom = (window.innerHeight - btnRect.top + 8) + 'px';
+      popup.style.right  = (window.innerWidth  - btnRect.right)   + 'px';
+      popup.style.top    = 'auto';
+      popup.style.left   = 'auto';
+    } else {
+      // Mobile: full-width bottom sheet — reset any desktop override
+      popup.style.bottom = '';
+      popup.style.right  = '';
+      popup.style.top    = '';
+      popup.style.left   = '';
     }
   }
 
   function closeSettings() {
-    const popup   = document.getElementById('settings-popup');
-    const overlay = document.getElementById('settings-overlay');
-    const layer   = document.getElementById('settings-layer');
-    if (popup)   popup.classList.remove('open');
-    if (overlay) overlay.classList.remove('active');
-    if (layer)   layer.classList.remove('active');
-    settingsOpen = false;
+    const popup = document.getElementById('settings-popup');
+    const layer = document.getElementById('settings-layer');
+    const btn   = document.getElementById('settings-btn');
+    if (popup) popup.classList.remove('open');
+    if (layer) layer.classList.remove('active');
+    if (btn)   btn.classList.remove('active');
+    settingsOpen   = false;
     activeSubPanel = null;
-    const btn = document.getElementById('settings-btn');
-    if (btn) btn.classList.remove('active');
-    // Reset to main panel state after close
-    setTimeout(() => { if (!settingsOpen) _showPanel('main'); }, 260);
+    // Reset to main panel after close animation completes
+    setTimeout(() => { if (!settingsOpen) _showPanel('main'); }, 280);
   }
 
   /* Open a named sub-panel (slides in from right) */
@@ -2534,6 +2518,18 @@
   // ── Audio tracks & Subtitles (new submenu system) ────────────────────────
   function populateTracks() {
     if (!video) return;
+
+    // Audio Track menu row — show/hide based on whether multiple tracks exist
+    const audioRow = document.getElementById('row-audio');
+    const hasMultiAudio = video.audioTracks && video.audioTracks.length > 1;
+    if (audioRow) {
+      audioRow.style.display = hasMultiAudio ? '' : 'none';
+      // Also hide the divider immediately before it when hidden
+      const prev = audioRow.previousElementSibling;
+      if (prev && prev.classList.contains('settings-menu-divider')) {
+        prev.style.display = hasMultiAudio ? '' : 'none';
+      }
+    }
 
     // Audio tracks
     const atList = document.getElementById('audio-sub-list');

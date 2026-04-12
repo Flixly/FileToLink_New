@@ -12,7 +12,10 @@ import jinja2
 from bot import Bot
 from config import Config
 from database import Database
-from helper import StreamingService, check_bandwidth_limit, format_size
+from helper import (
+    StreamingService, check_bandwidth_limit, format_size,
+    should_warn_global_bw,
+)
 from helper.stream import (
     get_active_session_count,
     _register_session,
@@ -131,9 +134,29 @@ def build_app(bot: Bot, database) -> web.Application:
             )
             raise web.HTTPNotFound(reason="File no longer available on Telegram")
 
-        allowed, _ = await check_bandwidth_limit(database)
+        allowed, cycle_stats = await check_bandwidth_limit(database)
         if not allowed:
             raise web.HTTPServiceUnavailable(reason="bandwidth limit exceeded")
+
+        # Async warning to owner (fire-and-forget, never blocks the stream)
+        async def _maybe_warn_owner():
+            try:
+                if await should_warn_global_bw(database):
+                    days_r = cycle_stats.get("days_remaining", "?")
+                    pct    = cycle_stats.get("pct", 0)
+                    for owner_id in Config.OWNER_ID:
+                        try:
+                            await bot.send_message(
+                                owner_id,
+                                f"⚠️ **Global bandwidth at {pct:.1f}%** of monthly limit!\n"
+                                f"🔄 Resets in `{days_r}` days.",
+                            )
+                        except Exception:
+                            pass
+            except Exception:
+                pass
+        import asyncio as _asyncio
+        _asyncio.ensure_future(_maybe_warn_owner())
 
         base      = str(request.url.origin())
         file_type = (
@@ -187,7 +210,14 @@ def build_app(bot: Bot, database) -> web.Application:
 
         max_bw    = Config.get("max_bandwidth", 107374182400)
         bw_mode   = Config.get("bandwidth_mode", True)
-        bw_used   = bw_stats["total_bandwidth"]
+        # Use monthly cycle stats as the primary source
+        try:
+            cycle = await database.get_global_bw_cycle()
+            bw_used   = cycle.get("used", bw_stats["total_bandwidth"])
+            days_r    = cycle.get("days_remaining", 30)
+        except Exception:
+            bw_used   = bw_stats["total_bandwidth"]
+            days_r    = 30
         bw_today  = bw_stats["today_bandwidth"]
         remaining = max(0, max_bw - bw_used)
         bw_pct    = round((bw_used / max_bw * 100) if max_bw else 0, 1)
@@ -216,12 +246,13 @@ def build_app(bot: Bot, database) -> web.Application:
             "ram_pct":      ram_pct,
             "cpu_pct":      cpu_pct,
             "uptime":       uptime_str,
-            "bw_mode":      bw_mode,
-            "bw_limit":     format_size(max_bw),
-            "bw_used":      format_size(bw_used),
-            "bw_today":     format_size(bw_today),
-            "bw_remaining": format_size(remaining),
-            "bw_pct":       bw_pct,
+            "bw_mode":        bw_mode,
+            "bw_limit":       format_size(max_bw),
+            "bw_used":        format_size(bw_used),
+            "bw_today":       format_size(bw_today),
+            "bw_remaining":   format_size(remaining),
+            "bw_pct":         bw_pct,
+            "bw_days_reset":  days_r,
             "bot_status":   "running" if getattr(bot, "me", None) else "initializing",
             "active_conns": get_active_session_count(),
         }

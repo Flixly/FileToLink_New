@@ -13,7 +13,11 @@ from pyrogram.types import (
 )
 
 from config import Config
-from helper import Cryptic, format_size, escape_markdown, small_caps, check_fsub, check_owner
+from helper import (
+    Cryptic, format_size, escape_markdown, small_caps,
+    check_fsub, check_owner, check_user_bandwidth_limit,
+    should_warn_user_bw, format_uptime,
+)
 from database import db
 
 logger = logging.getLogger(__name__)
@@ -42,6 +46,23 @@ async def file_handler(client: Client, message: Message):
         if not await check_fsub(client, message):
             return
 
+    # ── Ban check ─────────────────────────────────────────────────────────
+    if user_id not in Config.OWNER_ID and not await db.is_sudo_user(str(user_id)):
+        if await db.is_banned(str(user_id)):
+            ban_info = await db.get_ban_info(str(user_id))
+            reason   = (ban_info or {}).get("reason", "ᴜɴꜱᴘᴇᴄɪꜰɪᴇᴅ")
+            await client.send_message(
+                chat_id=message.chat.id,
+                text=(
+                    f"🚫 **{small_caps('access denied — you are banned')}**\n\n"
+                    f"**{small_caps('reason')}:**\n{reason}\n\n"
+                    "ᴄᴏɴᴛᴀᴄᴛ ᴛʜᴇ ᴀᴅᴍɪɴɪꜱᴛʀᴀᴛᴏʀ ᴛᴏ ᴀᴘᴘᴇᴀʟ."
+                ),
+                reply_to_message_id=message.id,
+                disable_web_page_preview=True,
+            )
+            return
+
     if not await check_access(user_id):
         await client.send_message(
             chat_id=message.chat.id,
@@ -51,19 +72,40 @@ async def file_handler(client: Client, message: Message):
         )
         return
 
-    stats         = await db.get_bandwidth_stats()
-    max_bandwidth = Config.get("max_bandwidth", 107374182400)
-    if Config.get("bandwidth_mode", True) and stats["total_bandwidth"] >= max_bandwidth:
-        await client.send_message(
-            chat_id=message.chat.id,
-            text=(
-                f"❌ **{small_caps('bandwidth limit reached')}!**\n\n"
-                "ᴘʟᴇᴀꜱᴇ ᴄᴏɴᴛᴀᴄᴛ ᴛʜᴇ ᴀᴅᴍɪɴɪꜱᴛʀᴀᴛᴏʀ."
-            ),
-            reply_to_message_id=message.id,
-            disable_web_page_preview=True,
-        )
-        return
+    # ── Global bandwidth check ────────────────────────────────────────────
+    if Config.get("bandwidth_mode", True):
+        cycle     = await db.get_global_bw_cycle()
+        max_bw    = Config.get("max_bandwidth", 107374182400)
+        if max_bw > 0 and cycle.get("used", 0) >= max_bw:
+            await client.send_message(
+                chat_id=message.chat.id,
+                text=(
+                    f"❌ **{small_caps('global bandwidth limit reached')}!**\n\n"
+                    f"🔄 {small_caps('resets in')} `{cycle.get('days_remaining', '?')}` ᴅᴀʏꜱ.\n"
+                    "ᴘʟᴇᴀꜱᴇ ᴄᴏɴᴛᴀᴄᴛ ᴛʜᴇ ᴀᴅᴍɪɴɪꜱᴛʀᴀᴛᴏʀ."
+                ),
+                reply_to_message_id=message.id,
+                disable_web_page_preview=True,
+            )
+            return
+
+    # ── Per-user bandwidth check (skip for owner/sudo) ────────────────────
+    if user_id not in Config.OWNER_ID and not await db.is_sudo_user(str(user_id)):
+        allowed, ubw_stats = await check_user_bandwidth_limit(db, user_id)
+        if not allowed:
+            days_r = ubw_stats.get("days_remaining", "?")
+            await client.send_message(
+                chat_id=message.chat.id,
+                text=(
+                    f"❌ **{small_caps('your monthly bandwidth limit is reached')}!**\n\n"
+                    f"📊 **{small_caps('used')}:** `{format_size(ubw_stats.get('used', 0))}`\n"
+                    f"📶 **{small_caps('limit')}:** `{format_size(ubw_stats.get('limit', 0))}`\n"
+                    f"🔄 **{small_caps('resets in')}:** `{days_r}` ᴅᴀʏꜱ"
+                ),
+                reply_to_message_id=message.id,
+                disable_web_page_preview=True,
+            )
+            return
 
     if message.document:
         file       = message.document
@@ -221,6 +263,27 @@ async def file_handler(client: Client, message: Message):
         text,
         reply_markup=InlineKeyboardMarkup(buttons),
     )
+
+    # ── Per-user bandwidth warning (fire-and-forget, never blocks) ────────
+    if user_id not in Config.OWNER_ID and not await db.is_sudo_user(str(user_id)):
+        try:
+            if await should_warn_user_bw(db, user_id):
+                stats = await db.get_user_bw(str(user_id))
+                pct   = stats.get("pct", 0)
+                days  = stats.get("days_remaining", "?")
+                await client.send_message(
+                    chat_id=message.chat.id,
+                    text=(
+                        f"⚠️ **{small_caps('bandwidth warning')}**\n\n"
+                        f"ʏᴏᴜ ʜᴀᴠᴇ ᴜꜱᴇᴅ **{pct:.1f}%** ᴏꜰ ʏᴏᴜʀ ᴍᴏɴᴛʜʟʏ ᴅᴏᴡɴʟᴏᴀᴅ ᴀʟʟᴏᴡᴀɴᴄᴇ.\n"
+                        f"🔄 ʀᴇꜱᴇᴛꜱ ɪɴ `{days}` ᴅᴀʏꜱ.\n\n"
+                        f"📊 **{small_caps('used')}:** `{format_size(stats.get('used', 0))}`\n"
+                        f"📶 **{small_caps('limit')}:** `{format_size(stats.get('limit', 0))}`"
+                    ),
+                    disable_web_page_preview=True,
+                )
+        except Exception:
+            pass
 
 
 @Client.on_message(filters.command("files") & filters.private, group=0)
