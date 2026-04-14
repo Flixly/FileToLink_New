@@ -1,8 +1,11 @@
+import hashlib
+import hmac
 import json
 import logging
 import time
 import asyncio
 from pathlib import Path
+from urllib.parse import parse_qs, unquote
 
 import psutil
 from aiohttp import web
@@ -34,11 +37,46 @@ TEMPLATES_DIR = Path(__file__).parent / "templates"
 def _bot_info(bot: Bot) -> dict:
     me = getattr(bot, "me", None)
     return {
-        "bot_name":     (me.first_name if me else None) or DEFAULT_BOT_NAME,
-        "bot_username": (me.username   if me else None) or DEFAULT_BOT_USERNAME,
+        "bot_name":     (me.first_name if me else None) or "FLiX Bot",
+        "bot_username": (me.username   if me else None) or "FLiX_LY",
         "bot_id":       str(me.id)    if me else "N/A",
         "bot_dc":       str(me.dc_id) if me else "N/A",
     }
+
+
+def _validate_telegram_init_data(init_data: str, bot_token: str) -> dict | None:
+    """
+    Validate Telegram Web App initData using HMAC-SHA256.
+    Returns parsed user data dict on success, None on failure.
+    """
+    try:
+        parsed = parse_qs(init_data)
+        data_check_string_parts = []
+        user_data = None
+
+        for key, values in sorted(parsed.items()):
+            if key == "hash":
+                continue
+            val = values[0] if values else ""
+            data_check_string_parts.append(f"{key}={val}")
+            if key == "user":
+                try:
+                    user_data = json.loads(unquote(val))
+                except Exception:
+                    user_data = json.loads(val)
+
+        data_check_string = "\n".join(data_check_string_parts)
+        secret_key = hmac.new(b"WebAppData", bot_token.encode(), hashlib.sha256).digest()
+        expected_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
+
+        provided_hash = parsed.get("hash", [""])[0]
+        if not hmac.compare_digest(expected_hash, provided_hash):
+            return None
+
+        return user_data or {}
+    except Exception as exc:
+        logger.debug("TWA init_data validation failed: %s", exc)
+        return None
 
 
 def build_app(bot: Bot, database) -> web.Application:
@@ -98,9 +136,6 @@ def build_app(bot: Bot, database) -> web.Application:
         }
 
     async def _tracked_stream(request: web.Request, file_hash: str, is_download: bool):
-        # One (file_hash, client_ip) pair = one unique session.
-        # Registration is idempotent: repeated range-requests from the same
-        # player only refresh the heartbeat, they never increment the counter.
         client_ip   = _get_client_ip(request)
         session_key = f"{file_hash}:{client_ip}"
         await _register_session(session_key)
@@ -121,8 +156,7 @@ def build_app(bot: Bot, database) -> web.Application:
         if not file_data:
             raise web.HTTPNotFound(reason="File not found")
 
-        # Also verify the file exists in the Flog/dump channel so we can
-        # surface a clean 404 instead of a player error mid-stream.
+        # Verify file still exists in Telegram
         try:
             from helper.stream import get_file_ids
             await get_file_ids(bot, str(file_data["message_id"]))
@@ -134,11 +168,36 @@ def build_app(bot: Bot, database) -> web.Application:
             )
             raise web.HTTPNotFound(reason="File no longer available on Telegram")
 
+        # ── User bandwidth enforcement ─────────────────────────────
+        user_id = str(file_data.get("user_id", ""))
+        if user_id and Config.get("user_bw_mode", True):
+            allowed_user, user_stats = await database.check_user_bw_limit(user_id)
+            if not allowed_user:
+                max_ubw = Config.get("max_user_bandwidth", 10737418240)
+                days_r  = user_stats.get("days_remaining", "?")
+                # Fire-and-forget warning
+                async def _warn_user_limit():
+                    try:
+                        uid_int = int(user_id)
+                        await bot.send_message(
+                            uid_int,
+                            f"🚫 **Your monthly bandwidth limit has been reached!**\n\n"
+                            f"📊 Limit: `{format_size(max_ubw)}`\n"
+                            f"🔄 Resets in: `{days_r} days`\n\n"
+                            "Streaming and downloads are currently **blocked** until your limit resets "
+                            "or an admin manually resets your quota.",
+                        )
+                    except Exception:
+                        pass
+                asyncio.ensure_future(_warn_user_limit())
+                raise web.HTTPServiceUnavailable(reason="user bandwidth limit exceeded")
+
+        # ── Global bandwidth enforcement ───────────────────────────
         allowed, cycle_stats = await check_bandwidth_limit(database)
         if not allowed:
             raise web.HTTPServiceUnavailable(reason="bandwidth limit exceeded")
 
-        # Async warning to owner (fire-and-forget, never blocks the stream)
+        # Warn owner if approaching limit (fire-and-forget)
         async def _maybe_warn_owner():
             try:
                 if await should_warn_global_bw(database):
@@ -155,8 +214,7 @@ def build_app(bot: Bot, database) -> web.Application:
                             pass
             except Exception:
                 pass
-        import asyncio as _asyncio
-        _asyncio.ensure_future(_maybe_warn_owner())
+        asyncio.ensure_future(_maybe_warn_owner())
 
         base      = str(request.url.origin())
         file_type = (
@@ -176,9 +234,6 @@ def build_app(bot: Bot, database) -> web.Application:
         playable = is_browser_playable(mime)
 
         info = _bot_info(bot)
-        # Build thumbnail URL for the template (used ONLY as metadata for external
-        # players — the built-in web player does NOT display it)
-        # thumbnail_url is used only as OG metadata (no /thumb endpoint)
         thumbnail_url = f"{base}/stream/{file_hash}"
         context = {
             "bot_name":         info["bot_name"],
@@ -198,6 +253,29 @@ def build_app(bot: Bot, database) -> web.Application:
 
     async def download_file(request: web.Request):
         file_hash = request.match_info["file_hash"]
+
+        # ── User bandwidth enforcement for downloads ───────────────
+        file_data = await database.get_file_by_hash(file_hash)
+        if file_data:
+            user_id = str(file_data.get("user_id", ""))
+            if user_id and Config.get("user_bw_mode", True):
+                allowed_user, user_stats = await database.check_user_bw_limit(user_id)
+                if not allowed_user:
+                    max_ubw = Config.get("max_user_bandwidth", 10737418240)
+                    days_r  = user_stats.get("days_remaining", "?")
+                    async def _warn_dl_limit():
+                        try:
+                            await bot.send_message(
+                                int(user_id),
+                                f"🚫 **Download blocked — bandwidth limit reached!**\n\n"
+                                f"📊 Limit: `{format_size(max_ubw)}`\n"
+                                f"🔄 Resets in: `{days_r} days`",
+                            )
+                        except Exception:
+                            pass
+                    asyncio.ensure_future(_warn_dl_limit())
+                    raise web.HTTPServiceUnavailable(reason="user bandwidth limit exceeded")
+
         return await _tracked_stream(request, file_hash, is_download=True)
 
     async def _collect_panel_data():
@@ -210,14 +288,14 @@ def build_app(bot: Bot, database) -> web.Application:
 
         max_bw    = Config.get("max_bandwidth", 107374182400)
         bw_mode   = Config.get("bandwidth_mode", True)
-        # Use monthly cycle stats as the primary source
         try:
-            cycle = await database.get_global_bw_cycle()
-            bw_used   = cycle.get("used", bw_stats["total_bandwidth"])
-            days_r    = cycle.get("days_remaining", 30)
+            cycle   = await database.get_global_bw_cycle()
+            bw_used = cycle.get("used", bw_stats["total_bandwidth"])
+            days_r  = cycle.get("days_remaining", 30)
         except Exception:
-            bw_used   = bw_stats["total_bandwidth"]
-            days_r    = 30
+            bw_used = bw_stats["total_bandwidth"]
+            days_r  = 30
+
         bw_today  = bw_stats["today_bandwidth"]
         remaining = max(0, max_bw - bw_used)
         bw_pct    = round((bw_used / max_bw * 100) if max_bw else 0, 1)
@@ -277,6 +355,24 @@ def build_app(bot: Bot, database) -> web.Application:
             logger.error("bot_settings page error: %s", exc)
             return web.Response(status=500, text="Internal server error")
 
+    # ── Telegram Web App page ──────────────────────────────────
+    async def twa_page(request: web.Request):
+        """Serve the Telegram Web App SPA."""
+        try:
+            info = _bot_info(bot)
+            return aiohttp_jinja2.render_template(
+                "twa.html",
+                request,
+                {
+                    "bot_name":     info["bot_name"],
+                    "bot_username": info["bot_username"],
+                },
+            )
+        except Exception as exc:
+            logger.error("twa page error: %s", exc)
+            return web.Response(status=500, text="Internal server error")
+
+    # ── API: Stats ─────────────────────────────────────────────
     async def api_stats(request: web.Request):
         try:
             stats    = await database.get_stats()
@@ -313,6 +409,7 @@ def build_app(bot: Bot, database) -> web.Application:
             logger.error("api_stats error: %s", exc)
             return web.json_response({"error": str(exc)}, status=500)
 
+    # ── API: Basic Bandwidth ───────────────────────────────────
     async def api_bandwidth(request: web.Request):
         try:
             stats     = await database.get_bandwidth_stats()
@@ -340,6 +437,81 @@ def build_app(bot: Bot, database) -> web.Application:
             logger.error("api_bandwidth error: %s", exc)
             return web.json_response({"error": str(exc)}, status=500)
 
+    # ── API: Full Bandwidth (enhanced for bot_settings BW panel) ─
+    async def api_bandwidth_full(request: web.Request):
+        """
+        Extended bandwidth API used by the bot_settings bandwidth panel.
+        Includes:
+          - Global monthly cycle stats with seconds_to_reset
+          - Per-user limit config
+          - users_over_limit count
+        """
+        try:
+            from datetime import datetime
+            stats      = await database.get_bandwidth_stats()
+            cycle      = await database.get_global_bw_cycle()
+            max_bw     = Config.get("max_bandwidth", 107374182400)
+            bw_mode    = Config.get("bandwidth_mode", True)
+            user_bw_mode = Config.get("user_bw_mode", True)
+            max_ubw    = Config.get("max_user_bandwidth", 10737418240)
+
+            used      = cycle.get("used", stats["total_bandwidth"])
+            today     = stats["today_bandwidth"]
+            remaining = max(0, max_bw - used)
+            pct       = round((used / max_bw * 100) if max_bw else 0, 1)
+            days_r    = cycle.get("days_remaining", 30)
+
+            # Calculate seconds to reset (precise)
+            cycle_end = cycle.get("cycle_end")
+            if cycle_end:
+                now = datetime.utcnow()
+                delta = cycle_end - now
+                seconds_to_reset = max(0, int(delta.total_seconds()))
+            else:
+                seconds_to_reset = days_r * 86400
+
+            # Count users over limit (async, best-effort)
+            users_over_limit = 0
+            try:
+                cursor = database.user_bw.find({})
+                docs   = await cursor.to_list(length=None)
+                for doc in docs:
+                    used_b = doc.get("used_bytes", 0)
+                    if max_ubw > 0 and used_b >= max_ubw:
+                        users_over_limit += 1
+            except Exception:
+                pass
+
+            payload = {
+                "limit":            max_bw,
+                "used":             used,
+                "remaining":        remaining,
+                "today":            today,
+                "percentage":       pct,
+                "days_remaining":   days_r,
+                "seconds_to_reset": seconds_to_reset,
+                "bandwidth_mode":   bw_mode,
+                "user_bw_mode":     user_bw_mode,
+                "max_user_bw":      max_ubw,
+                "users_over_limit": users_over_limit,
+                "formatted": {
+                    "total_bandwidth": format_size(used),
+                    "today_bandwidth": format_size(today),
+                    "limit":           format_size(max_bw),
+                    "remaining":       format_size(remaining),
+                    "user_limit":      format_size(max_ubw) if max_ubw else "Unlimited",
+                },
+            }
+            return web.Response(
+                text=json.dumps(payload),
+                content_type="application/json",
+                headers={"Access-Control-Allow-Origin": "*"},
+            )
+        except Exception as exc:
+            logger.error("api_bandwidth_full error: %s", exc)
+            return web.json_response({"error": str(exc)}, status=500)
+
+    # ── API: Health ────────────────────────────────────────────
     async def api_health(request: web.Request):
         try:
             info = _bot_info(bot)
@@ -357,6 +529,144 @@ def build_app(bot: Bot, database) -> web.Application:
             logger.error("api_health error: %s", exc)
             return web.json_response({"error": str(exc)}, status=500)
 
+    # ── TWA API: Validate + get user data ─────────────────────
+    async def twa_api_auth(request: web.Request):
+        """Validate Telegram initData and return user info + limits."""
+        try:
+            body = await request.json()
+            init_data = body.get("initData", "")
+            if not init_data:
+                return web.json_response({"ok": False, "error": "no initData"}, status=400)
+
+            user_data = _validate_telegram_init_data(init_data, Config.BOT_TOKEN)
+            if user_data is None:
+                return web.json_response({"ok": False, "error": "invalid initData"}, status=403)
+
+            user_id = str(user_data.get("id", ""))
+            bw_info = {}
+            if user_id:
+                try:
+                    bw_stats = await database.get_user_bw(user_id)
+                    max_ubw  = Config.get("max_user_bandwidth", 10737418240)
+                    bw_info  = {
+                        "used":      bw_stats.get("used", 0),
+                        "limit":     max_ubw,
+                        "remaining": max(0, max_ubw - bw_stats.get("used", 0)),
+                        "pct":       bw_stats.get("pct", 0),
+                        "days_remaining": bw_stats.get("days_remaining", 30),
+                        "formatted": {
+                            "used":      format_size(bw_stats.get("used", 0)),
+                            "limit":     format_size(max_ubw),
+                            "remaining": format_size(max(0, max_ubw - bw_stats.get("used", 0))),
+                        },
+                    }
+                except Exception:
+                    pass
+
+            return web.json_response({
+                "ok":       True,
+                "user":     user_data,
+                "bw_info":  bw_info,
+                "bw_mode":  Config.get("bandwidth_mode", True),
+                "user_bw_mode": Config.get("user_bw_mode", True),
+            }, headers={"Access-Control-Allow-Origin": "*"})
+
+        except Exception as exc:
+            logger.error("twa_api_auth error: %s", exc)
+            return web.json_response({"ok": False, "error": str(exc)}, status=500)
+
+    # ── TWA API: List user files ───────────────────────────────
+    async def twa_api_files(request: web.Request):
+        """Return paginated file list for authenticated TWA user."""
+        try:
+            # Get auth header or query param
+            init_data = request.headers.get("X-Telegram-Init-Data", "")
+            if not init_data:
+                init_data = request.rel_url.query.get("initData", "")
+
+            user_data = _validate_telegram_init_data(init_data, Config.BOT_TOKEN)
+            if user_data is None:
+                return web.json_response({"ok": False, "error": "unauthorized"}, status=403)
+
+            user_id = str(user_data.get("id", ""))
+            page    = int(request.rel_url.query.get("page", 1))
+            limit   = min(int(request.rel_url.query.get("limit", 20)), 50)
+            skip    = (page - 1) * limit
+
+            # Check user bw limit
+            allowed = True
+            if user_id and Config.get("user_bw_mode", True):
+                allowed, _ = await database.check_user_bw_limit(user_id)
+
+            cursor, total = await database.find_files(user_id, [skip + 1, limit])
+            files = []
+            async for doc in cursor:
+                base = str(request.url.origin())
+                files.append({
+                    "file_id":   doc["file_id"],
+                    "file_name": doc["file_name"],
+                    "file_size": doc["file_size"],
+                    "file_size_fmt": format_size(doc["file_size"]),
+                    "file_type": doc.get("file_type", "document"),
+                    "mime_type": doc.get("mime_type", ""),
+                    "stream_url": f"{base}/stream/{doc['file_id']}",
+                    "download_url": f"{base}/dl/{doc['file_id']}",
+                    "created_at": doc.get("created_at", "").isoformat() if hasattr(doc.get("created_at", ""), "isoformat") else str(doc.get("created_at", "")),
+                })
+
+            return web.json_response({
+                "ok":       True,
+                "files":    files,
+                "total":    total,
+                "page":     page,
+                "pages":    max(1, -(-total // limit)),
+                "allowed":  allowed,
+            }, headers={"Access-Control-Allow-Origin": "*"})
+
+        except Exception as exc:
+            logger.error("twa_api_files error: %s", exc)
+            return web.json_response({"ok": False, "error": str(exc)}, status=500)
+
+    # ── TWA API: Global bandwidth info (public) ────────────────
+    async def twa_api_bandwidth(request: web.Request):
+        """Public global bandwidth info for TWA display."""
+        try:
+            cycle  = await database.get_global_bw_cycle()
+            max_bw = Config.get("max_bandwidth", 107374182400)
+            used   = cycle.get("used", 0)
+            pct    = cycle.get("pct", 0)
+            days_r = cycle.get("days_remaining", 30)
+
+            return web.json_response({
+                "ok": True,
+                "used":      used,
+                "limit":     max_bw,
+                "remaining": max(0, max_bw - used),
+                "pct":       pct,
+                "days_remaining": days_r,
+                "formatted": {
+                    "used":      format_size(used),
+                    "limit":     format_size(max_bw),
+                    "remaining": format_size(max(0, max_bw - used)),
+                },
+            }, headers={"Access-Control-Allow-Origin": "*"})
+
+        except Exception as exc:
+            logger.error("twa_api_bandwidth error: %s", exc)
+            return web.json_response({"ok": False, "error": str(exc)}, status=500)
+
+    # ── Preflight CORS handler ─────────────────────────────────
+    async def cors_preflight(request: web.Request):
+        return web.Response(
+            status=204,
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type, X-Telegram-Init-Data",
+            },
+        )
+
+    # ── Legacy redirect endpoints ──────────────────────────────
     async def stats_endpoint(request: web.Request):
         if "application/json" in request.headers.get("Accept", ""):
             return await api_stats(request)
@@ -372,15 +682,28 @@ def build_app(bot: Bot, database) -> web.Application:
             return await api_health(request)
         raise web.HTTPFound("/bot_settings")
 
-    app.router.add_get("/",                      home)
-    app.router.add_get("/stream/{file_hash}",    stream_page)
-    app.router.add_get("/dl/{file_hash}",        download_file)
-    app.router.add_get("/bot_settings",          bot_settings_page)
-    app.router.add_get("/api/stats",             api_stats)
-    app.router.add_get("/api/bandwidth",         api_bandwidth)
-    app.router.add_get("/api/health",            api_health)
-    app.router.add_get("/stats",                 stats_endpoint)
-    app.router.add_get("/bandwidth",             bandwidth_endpoint)
-    app.router.add_get("/health",                health_endpoint)
+    # ── Routes ────────────────────────────────────────────────
+    app.router.add_get("/",                          home)
+    app.router.add_get("/stream/{file_hash}",        stream_page)
+    app.router.add_get("/dl/{file_hash}",            download_file)
+    app.router.add_get("/bot_settings",              bot_settings_page)
+    app.router.add_get("/twa",                       twa_page)
+
+    # Core API
+    app.router.add_get("/api/stats",                 api_stats)
+    app.router.add_get("/api/bandwidth",             api_bandwidth)
+    app.router.add_get("/api/bandwidth/full",        api_bandwidth_full)
+    app.router.add_get("/api/health",                api_health)
+
+    # TWA API
+    app.router.add_post("/api/twa/auth",             twa_api_auth)
+    app.router.add_get("/api/twa/files",             twa_api_files)
+    app.router.add_get("/api/twa/bandwidth",         twa_api_bandwidth)
+    app.router.add_route("OPTIONS", "/api/twa/{tail:.*}", cors_preflight)
+
+    # Legacy redirects
+    app.router.add_get("/stats",                     stats_endpoint)
+    app.router.add_get("/bandwidth",                 bandwidth_endpoint)
+    app.router.add_get("/health",                    health_endpoint)
 
     return app

@@ -7,7 +7,7 @@
   <link rel="icon" type="image/jpeg" href="https://i.ibb.co/2YsHg8tf/IMG-3062.jpg">
   <link rel="shortcut icon" type="image/jpeg" href="https://i.ibb.co/2YsHg8tf/IMG-3062.jpg">
   <link rel="apple-touch-icon" href="https://i.ibb.co/2YsHg8tf/IMG-3062.jpg">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
     /* ── CSS Custom Properties ──────────────────────────────── */
@@ -54,6 +54,11 @@
       --toggle-bg:         rgba(255,255,255,.08);
       --toggle-border:     rgba(255,255,255,.18);
       --toggle-color:      rgba(255,255,255,.8);
+      --bw-card-bg:        rgba(255,255,255,0.04);
+      --bw-card-border:    rgba(79,172,254,.22);
+      --bw-card-glow:      rgba(79,172,254,0.08);
+      --user-card-bg:      rgba(255,255,255,0.04);
+      --user-card-border:  rgba(102,126,234,.22);
     }
 
     [data-theme="light"] {
@@ -98,6 +103,11 @@
       --toggle-bg:         rgba(102,126,234,.12);
       --toggle-border:     rgba(102,126,234,.3);
       --toggle-color:      #4a5568;
+      --bw-card-bg:        rgba(255,255,255,.92);
+      --bw-card-border:    rgba(79,172,254,.28);
+      --bw-card-glow:      rgba(79,172,254,0.05);
+      --user-card-bg:      rgba(255,255,255,.92);
+      --user-card-border:  rgba(102,126,234,.25);
     }
 
     /* ── Reset ──────────────────────────────────────────────── */
@@ -118,7 +128,7 @@
       transition: background .45s ease, color .45s ease;
     }
 
-    /* ── Theme Toggle (left) ─────────────────────────────────── */
+    /* ── Theme Toggle ─────────────────────────────────────── */
     .theme-toggle {
       position: fixed;
       top: 18px; left: 18px;
@@ -178,7 +188,7 @@
     /* ── Container ──────────────────────────────────────────── */
     .container {
       position: relative; z-index: 1;
-      width: 100%; max-width: 840px;
+      width: 100%; max-width: 880px;
       animation: fadeInDown .7s cubic-bezier(.22,.61,.36,1) both;
     }
     @keyframes fadeInDown {
@@ -204,10 +214,8 @@
     }
     .header h1 {
       font-size: clamp(1.5rem, 4vw, 2rem);
-      font-weight: 800;
-      color: var(--text-primary);
-      letter-spacing: -.3px;
-      margin-bottom: 5px;
+      font-weight: 800; color: var(--text-primary);
+      letter-spacing: -.3px; margin-bottom: 5px;
     }
     .header p { color: var(--text-secondary); font-size: .92rem; }
 
@@ -301,8 +309,7 @@
       border-radius: 20px;
       padding: 22px 16px 18px;
       text-align: center;
-      transition: transform .28s cubic-bezier(.34,1.56,.64,1),
-                  box-shadow .28s ease;
+      transition: transform .28s cubic-bezier(.34,1.56,.64,1), box-shadow .28s ease;
     }
     .stat-card:hover {
       transform: translateY(-6px) scale(1.02);
@@ -357,6 +364,156 @@
     .bw-meta {
       display: flex; justify-content: space-between;
       font-size: .78rem; color: var(--text-muted);
+    }
+
+    /* ── NEW: Bandwidth Cards ───────────────────────────────── */
+    .bw-cards-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 26px;
+    }
+    @media (max-width: 640px) { .bw-cards-grid { grid-template-columns: 1fr; } }
+
+    .bw-card {
+      background: var(--bw-card-bg);
+      border: 1px solid var(--bw-card-border);
+      border-radius: 22px;
+      padding: 22px;
+      box-shadow: 0 4px 24px var(--bw-card-glow);
+      transition: transform .28s cubic-bezier(.34,1.56,.64,1), box-shadow .28s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .bw-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #4facfe, #00f2fe);
+      border-radius: 22px 22px 0 0;
+    }
+    .bw-card.user-card::before {
+      background: linear-gradient(90deg, #667eea, #764ba2);
+    }
+    .bw-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 36px rgba(79,172,254,.18);
+    }
+    .bw-card.user-card:hover {
+      box-shadow: 0 12px 36px rgba(102,126,234,.18);
+    }
+
+    .bw-card-header {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 18px;
+    }
+    .bw-card-icon {
+      width: 44px; height: 44px;
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.15rem; flex-shrink: 0;
+    }
+    .bw-card-icon.global { background: linear-gradient(135deg, #4facfe, #00f2fe); color: #fff; box-shadow: 0 6px 18px rgba(79,172,254,.35); }
+    .bw-card-icon.user   { background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; box-shadow: 0 6px 18px rgba(102,126,234,.35); }
+
+    .bw-card-title {
+      flex: 1; min-width: 0;
+    }
+    .bw-card-title h3 {
+      font-size: .95rem; font-weight: 800;
+      color: var(--text-primary); margin-bottom: 2px;
+    }
+    .bw-card-title p {
+      font-size: .74rem; color: var(--text-muted);
+    }
+
+    .bw-card-body {
+      display: flex; flex-direction: column; gap: 10px;
+    }
+
+    .bw-stat-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 9px 14px;
+      background: rgba(255,255,255,.04);
+      border-radius: 11px;
+      border: 1px solid rgba(255,255,255,.06);
+    }
+    [data-theme="light"] .bw-stat-row {
+      background: rgba(102,126,234,.05);
+      border-color: rgba(102,126,234,.1);
+    }
+
+    .bw-stat-label {
+      display: flex; align-items: center; gap: 8px;
+      font-size: .8rem; color: var(--text-info-label); font-weight: 500;
+    }
+    .bw-stat-label i { font-size: .75rem; opacity: .75; }
+
+    .bw-stat-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .84rem; font-weight: 700;
+      color: var(--text-primary);
+    }
+    .bw-stat-value.ok   { color: #43e97b; }
+    .bw-stat-value.warn { color: #f6d365; }
+    .bw-stat-value.crit { color: #ff6b6b; }
+    .bw-stat-value.blue { color: #4facfe; }
+    .bw-stat-value.purple { color: #a78bfa; }
+
+    /* Mini progress bar inside BW card */
+    .bw-card-progress {
+      margin-top: 6px;
+    }
+    .bw-card-progress-row {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 6px;
+    }
+    .bw-card-progress-label {
+      font-size: .72rem; color: var(--text-muted); font-weight: 600;
+    }
+    .bw-card-progress-pct {
+      font-size: .78rem; font-weight: 800; color: #4facfe;
+    }
+    .bw-card-progress-pct.warn { color: #f6d365; }
+    .bw-card-progress-pct.crit { color: #ff6b6b; }
+    .bw-card-progress-pct.purple { color: #a78bfa; }
+    .bw-mini-bar-bg {
+      height: 8px;
+      background: var(--bw-bar-bg);
+      border-radius: 999px; overflow: hidden;
+    }
+    .bw-mini-bar-fill {
+      height: 100%; border-radius: 999px;
+      background: linear-gradient(90deg, #4facfe, #00f2fe);
+      transition: width 1.2s cubic-bezier(.4,0,.2,1);
+    }
+    .bw-mini-bar-fill.user  { background: linear-gradient(90deg, #667eea, #a78bfa); }
+    .bw-mini-bar-fill.warn  { background: linear-gradient(90deg, #f6d365, #fda085); }
+    .bw-mini-bar-fill.crit  { background: linear-gradient(90deg, #ff6b6b, #ee0979); }
+
+    /* ── Countdown / Reset Timer ────────────────────────────── */
+    .bw-reset-timer {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 11px 18px;
+      background: rgba(79,172,254,.08);
+      border: 1px solid rgba(79,172,254,.18);
+      border-radius: 12px;
+      margin-top: 6px;
+      font-size: .8rem; font-weight: 600;
+      color: #4facfe;
+    }
+    .bw-reset-timer i { font-size: .82rem; animation: tickPulse 1s ease-in-out infinite; }
+    @keyframes tickPulse { 0%,100%{opacity:1;} 50%{opacity:.45;} }
+    .bw-reset-timer .countdown-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+    }
+
+    .bw-reset-timer.user {
+      background: rgba(102,126,234,.08);
+      border-color: rgba(102,126,234,.18);
+      color: #a78bfa;
     }
 
     /* ── Info Rows ──────────────────────────────────────────── */
@@ -428,9 +585,7 @@
     }
 
     /* ── Latency Meter ──────────────────────────────────────── */
-    .latency-bar-wrap {
-      display: flex; align-items: center; gap: 10px; width: 100%;
-    }
+    .latency-bar-wrap { display: flex; align-items: center; gap: 10px; width: 100%; }
     .latency-bar-bg {
       flex:1; height: 6px;
       background: var(--progress-track);
@@ -441,10 +596,7 @@
       background: linear-gradient(90deg,#43e97b,#4facfe);
       transition: width .5s ease;
     }
-    .latency-val {
-      font-weight: 800; color: var(--badge-ok-color);
-      font-size: .88rem; min-width: 55px; text-align: right;
-    }
+    .latency-val { font-weight: 800; color: var(--badge-ok-color); font-size: .88rem; min-width: 55px; text-align: right; }
     .latency-val.warn { color: var(--badge-warn-color); }
     .latency-val.crit { color: var(--badge-err-color); }
 
@@ -476,8 +628,7 @@
     }
     .bot-info-text span {
       color: var(--text-label); font-size: .84rem;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      display: block;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;
     }
     .bot-status-badge { flex-shrink: 0; }
 
@@ -544,7 +695,7 @@
   </style>
 </head>
 <body>
-  <!-- Theme Toggle (left side) -->
+  <!-- Theme Toggle -->
   <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle theme">
     <i class="fa-solid fa-moon" id="theme-icon"></i>
   </button>
@@ -663,35 +814,131 @@
             <i class="fa-solid fa-satellite-dish"></i>
           </div>
           <div>
-            <h2>Bandwidth Info</h2>
-            <p>Data transfer overview</p>
+            <h2>Bandwidth Monitor</h2>
+            <p>Global &amp; per-user data transfer overview · auto-updates every 15s</p>
           </div>
         </div>
       </div>
       <div class="panel-body">
 
+        <!-- ── Bandwidth Cards Grid ─────────────────────────── -->
+        <div class="bw-cards-grid">
+
+          <!-- Global Bandwidth Card -->
+          <div class="bw-card" id="global-bw-card">
+            <div class="bw-card-header">
+              <div class="bw-card-icon global"><i class="fa-solid fa-globe"></i></div>
+              <div class="bw-card-title">
+                <h3>Global Bandwidth</h3>
+                <p>Bot-wide monthly cycle</p>
+              </div>
+            </div>
+            <div class="bw-card-body">
+              <div class="bw-stat-row">
+                <span class="bw-stat-label"><i class="fa-solid fa-gauge-high" style="color:#4facfe"></i> Limit</span>
+                <span class="bw-stat-value blue" id="g-limit">{{ bw_limit }}</span>
+              </div>
+              <div class="bw-stat-row">
+                <span class="bw-stat-label"><i class="fa-solid fa-upload" style="color:#f6d365"></i> Used</span>
+                <span class="bw-stat-value {% if bw_pct > 90 %}crit{% elif bw_pct > 70 %}warn{% endif %}" id="g-used">{{ bw_used }}</span>
+              </div>
+              <div class="bw-stat-row">
+                <span class="bw-stat-label"><i class="fa-solid fa-battery-three-quarters" style="color:#43e97b"></i> Remaining</span>
+                <span class="bw-stat-value ok" id="g-remaining">{{ bw_remaining }}</span>
+              </div>
+              <div class="bw-stat-row">
+                <span class="bw-stat-label"><i class="fa-solid fa-calendar-day" style="color:#fa709a"></i> Today</span>
+                <span class="bw-stat-value" id="g-today">{{ bw_today }}</span>
+              </div>
+            </div>
+            <div class="bw-card-progress">
+              <div class="bw-card-progress-row">
+                <span class="bw-card-progress-label">Usage Progress</span>
+                <span class="bw-card-progress-pct {% if bw_pct > 90 %}crit{% elif bw_pct > 70 %}warn{% endif %}" id="g-pct">{{ bw_pct }}%</span>
+              </div>
+              <div class="bw-mini-bar-bg">
+                <div class="bw-mini-bar-fill {% if bw_pct > 90 %}crit{% elif bw_pct > 70 %}warn{% endif %}"
+                     id="g-bar" style="width:{{ bw_pct }}%;"></div>
+              </div>
+            </div>
+            <div class="bw-reset-timer" id="g-reset-timer">
+              <i class="fa-solid fa-rotate"></i>
+              <span>Resets in</span>
+              <span class="countdown-val" id="g-countdown">{{ bw_days_reset }}d 0h 0m</span>
+            </div>
+          </div>
+
+          <!-- Per-User Bandwidth Card -->
+          <div class="bw-card user-card" id="user-bw-card">
+            <div class="bw-card-header">
+              <div class="bw-card-icon user"><i class="fa-solid fa-user-shield"></i></div>
+              <div class="bw-card-title">
+                <h3>Per-User Limit</h3>
+                <p>Monthly per-user cap</p>
+              </div>
+            </div>
+            <div class="bw-card-body">
+              <div class="bw-stat-row">
+                <span class="bw-stat-label"><i class="fa-solid fa-gauge-high" style="color:#a78bfa"></i> Limit/User</span>
+                <span class="bw-stat-value purple" id="u-limit">Loading…</span>
+              </div>
+              <div class="bw-stat-row">
+                <span class="bw-stat-label"><i class="fa-solid fa-toggle-on" style="color:#667eea"></i> Mode</span>
+                <span class="badge badge-ok" id="u-mode-badge">Active</span>
+              </div>
+              <div class="bw-stat-row">
+                <span class="bw-stat-label"><i class="fa-solid fa-users" style="color:#4facfe"></i> Users Over Limit</span>
+                <span class="bw-stat-value" id="u-over">—</span>
+              </div>
+              <div class="bw-stat-row">
+                <span class="bw-stat-label"><i class="fa-solid fa-circle-check" style="color:#43e97b"></i> BW Mode</span>
+                <span class="badge {{ 'badge-ok' if bw_mode else 'badge-error' }}" id="bw-mode-badge">
+                  {{ 'Active' if bw_mode else 'Inactive' }}
+                </span>
+              </div>
+            </div>
+            <div class="bw-card-progress">
+              <div class="bw-card-progress-row">
+                <span class="bw-card-progress-label">Global Fill %</span>
+                <span class="bw-card-progress-pct purple" id="u-gpct">{{ bw_pct }}%</span>
+              </div>
+              <div class="bw-mini-bar-bg">
+                <div class="bw-mini-bar-fill user {% if bw_pct > 90 %}crit{% elif bw_pct > 70 %}warn{% endif %}"
+                     id="u-gbar" style="width:{{ bw_pct }}%;"></div>
+              </div>
+            </div>
+            <div class="bw-reset-timer user" id="u-reset-timer">
+              <i class="fa-solid fa-rotate"></i>
+              <span>Global reset in</span>
+              <span class="countdown-val" id="u-countdown">{{ bw_days_reset }}d 0h 0m</span>
+            </div>
+          </div>
+
+        </div><!-- /bw-cards-grid -->
+
+        <!-- ── Legacy detail rows ────────────────────────────── -->
         <div class="info-section">
-          <div class="info-section-title"><i class="fa-solid fa-circle-info"></i> Current Status</div>
+          <div class="info-section-title"><i class="fa-solid fa-circle-info"></i> Detailed Breakdown</div>
           <div class="info-row">
             <span class="info-label">
               <span class="il-icon" style="background:rgba(102,126,234,.2)"><i class="fa-solid fa-toggle-on" style="color:#667eea"></i></span>
-              BW Mode
+              BW Enforcement
             </span>
-            <span class="badge {{ 'badge-ok' if bw_mode else 'badge-error' }}" id="bw-mode-badge">
-              {{ 'Active' if bw_mode else 'Inactive' }}
+            <span class="badge {{ 'badge-ok' if bw_mode else 'badge-error' }}" id="bw-mode-badge2">
+              {{ 'Enabled' if bw_mode else 'Disabled' }}
             </span>
           </div>
           <div class="info-row">
             <span class="info-label">
               <span class="il-icon" style="background:rgba(79,172,254,.2)"><i class="fa-solid fa-gauge-high" style="color:#4facfe"></i></span>
-              Limit
+              Total Limit
             </span>
             <span class="info-value" id="bw-limit">{{ bw_limit }}</span>
           </div>
           <div class="info-row">
             <span class="info-label">
               <span class="il-icon" style="background:rgba(246,211,101,.2)"><i class="fa-solid fa-upload" style="color:#f6d365"></i></span>
-              Used (Total)
+              Used (Cycle)
             </span>
             <span class="info-value" id="bw-used">{{ bw_used }}</span>
           </div>
@@ -709,11 +956,18 @@
             </span>
             <span class="info-value" id="bw-remaining">{{ bw_remaining }}</span>
           </div>
+          <div class="info-row">
+            <span class="info-label">
+              <span class="il-icon" style="background:rgba(160,140,255,.2)"><i class="fa-solid fa-rotate" style="color:#a78bfa"></i></span>
+              Cycle Reset
+            </span>
+            <span class="info-value" id="bw-days">In {{ bw_days_reset }} days</span>
+          </div>
         </div>
 
         <div class="bw-usage-block">
           <div class="bw-header">
-            <span class="bw-label">Usage Progress</span>
+            <span class="bw-label">Overall Usage Progress</span>
             <span class="bw-pct" id="bw-pct">{{ bw_pct }}%</span>
           </div>
           <div class="bw-bar-bg">
@@ -889,6 +1143,7 @@
     document.getElementById('panel-' + name).classList.add('active');
     btn.classList.add('active');
     if (name === 'health') startHealthUpdates();
+    if (name === 'bandwidth') { refreshBandwidth(); startBwCountdown(); }
   }
 
   // ── Helpers ────────────────────────────────────────────────
@@ -898,6 +1153,42 @@
     return el;
   }
   function stopSpin(el) { if (el) el.classList.remove('spin'); }
+
+  function setBwBarClass(el, pct) {
+    if (!el) return;
+    el.className = el.className.replace(/\b(warn|crit)\b/g, '').trim();
+    if (pct > 90) el.classList.add('crit');
+    else if (pct > 70) el.classList.add('warn');
+  }
+
+  // ── Countdown Timer ────────────────────────────────────────
+  // _resetEnd is seconds from now when the global cycle resets
+  let _resetEnd = null;
+  let _countdownTimer = null;
+
+  function formatCountdown(secondsLeft) {
+    if (secondsLeft <= 0) return 'Resetting…';
+    const d = Math.floor(secondsLeft / 86400);
+    const h = Math.floor((secondsLeft % 86400) / 3600);
+    const m = Math.floor((secondsLeft % 3600) / 60);
+    const s = secondsLeft % 60;
+    if (d > 0) return `${d}d ${h}h ${m}m`;
+    if (h > 0) return `${h}h ${m}m ${s}s`;
+    return `${m}m ${s}s`;
+  }
+
+  function startBwCountdown() {
+    if (_countdownTimer) clearInterval(_countdownTimer);
+    _countdownTimer = setInterval(() => {
+      if (_resetEnd === null) return;
+      const left = Math.max(0, _resetEnd - Math.floor(Date.now() / 1000));
+      const fmt = formatCountdown(left);
+      const gEl = document.getElementById('g-countdown');
+      const uEl = document.getElementById('u-countdown');
+      if (gEl) gEl.textContent = fmt;
+      if (uEl) uEl.textContent = fmt;
+    }, 1000);
+  }
 
   // ── Stats refresh ──────────────────────────────────────────
   async function refreshStats() {
@@ -918,7 +1209,7 @@
       document.getElementById('s-bwlimit').textContent= (d.bw_limit ?? '—') + ' limit';
       const bar = document.getElementById('s-bwbar');
       bar.style.width = pct + '%';
-      bar.className = 'bw-bar-fill' + (pct > 90 ? ' crit' : pct > 70 ? ' warn' : '');
+      setBwBarClass(bar, pct);
     } catch(e) { console.warn('stats refresh failed:', e); }
     stopSpin(ico);
   }
@@ -927,26 +1218,67 @@
   async function refreshBandwidth() {
     const ico = spinIcon('bw-refresh-icon');
     try {
-      const r = await fetch('/api/bandwidth');
+      const r = await fetch('/api/bandwidth/full');
       if (!r.ok) throw new Error(r.statusText);
       const d = await r.json();
       const f = d.formatted || {};
-      document.getElementById('bw-limit').textContent      = f.limit      ?? '—';
-      document.getElementById('bw-used').textContent       = f.total_bandwidth ?? '—';
-      document.getElementById('bw-today').textContent      = f.today_bandwidth ?? '—';
-      document.getElementById('bw-remaining').textContent  = f.remaining   ?? '—';
+
+      // Update legacy detail rows
+      const setV = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v ?? '—'; };
+      setV('bw-limit',     f.limit);
+      setV('bw-used',      f.total_bandwidth);
+      setV('bw-today',     f.today_bandwidth);
+      setV('bw-remaining', f.remaining);
+
+      const daysR = d.days_remaining ?? 30;
+      setV('bw-days', `In ${daysR} day${daysR !== 1 ? 's' : ''}`);
+
       const pct = d.percentage ?? 0;
-      document.getElementById('bw-pct').textContent        = pct + '%';
-      document.getElementById('bw-meta-used').textContent  = (f.total_bandwidth ?? '—') + ' used';
-      document.getElementById('bw-meta-limit').textContent = (f.limit ?? '—') + ' total';
+      setV('bw-pct',        pct + '%');
+      setV('bw-meta-used',  (f.total_bandwidth ?? '—') + ' used');
+      setV('bw-meta-limit', (f.limit ?? '—') + ' total');
+
+      // Main bar
       const bar = document.getElementById('bw-bar');
-      bar.style.width = pct + '%';
-      bar.className = 'bw-bar-fill' + (pct > 90 ? ' crit' : pct > 70 ? ' warn' : '');
-      const mode = document.getElementById('bw-mode-badge');
-      if (mode) {
-        mode.className = 'badge ' + (d.bandwidth_mode ? 'badge-ok' : 'badge-error');
-        mode.textContent = d.bandwidth_mode ? 'Active' : 'Inactive';
+      if (bar) { bar.style.width = pct + '%'; setBwBarClass(bar, pct); }
+
+      // Global BW card
+      setV('g-limit',     f.limit);
+      setV('g-used',      f.total_bandwidth);
+      setV('g-remaining', f.remaining);
+      setV('g-today',     f.today_bandwidth);
+      setV('g-pct',       pct + '%');
+      const gBar = document.getElementById('g-bar');
+      if (gBar) { gBar.style.width = pct + '%'; setBwBarClass(gBar, pct); }
+      const gPct = document.getElementById('g-pct');
+      if (gPct) { gPct.className = 'bw-card-progress-pct' + (pct > 90 ? ' crit' : pct > 70 ? ' warn' : ''); }
+
+      // User BW card
+      setV('u-limit', f.user_limit ?? 'N/A');
+      setV('u-over',  d.users_over_limit ?? '—');
+      setV('u-gpct',  pct + '%');
+      const uBar = document.getElementById('u-gbar');
+      if (uBar) { uBar.style.width = pct + '%'; setBwBarClass(uBar, pct); }
+
+      // Mode badges
+      const updateBadge = (id, active) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.className = 'badge ' + (active ? 'badge-ok' : 'badge-error');
+        el.textContent = active ? (id === 'u-mode-badge' ? 'Active' : 'Enabled') : (id === 'u-mode-badge' ? 'Inactive' : 'Disabled');
+      };
+      updateBadge('bw-mode-badge',  d.bandwidth_mode);
+      updateBadge('bw-mode-badge2', d.bandwidth_mode);
+      updateBadge('u-mode-badge',   d.user_bw_mode);
+
+      // Update countdown
+      if (d.seconds_to_reset != null) {
+        _resetEnd = Math.floor(Date.now() / 1000) + d.seconds_to_reset;
+        const fmt = formatCountdown(d.seconds_to_reset);
+        setV('g-countdown', fmt);
+        setV('u-countdown', fmt);
       }
+
     } catch(e) { console.warn('bw refresh failed:', e); }
     stopSpin(ico);
   }
@@ -987,7 +1319,7 @@
       const botOk = d.bot_status === 'running';
       setBadge('h-bot-status-badge',
                botOk ? 'badge-ok' : 'badge-init',
-               botOk ? 'Running' : 'Initializing');
+               botOk ? 'Running'  : 'Initializing');
 
       const latEl = document.getElementById('h-latency');
       const barEl = document.getElementById('h-latency-bar');
@@ -1010,12 +1342,12 @@
     _healthTimer = setInterval(refreshHealth, 5000);
   }
 
-  // ── Auto-refresh every 30s ─────────────────────────────────
+  // ── Auto-refresh ───────────────────────────────────────────
   refreshStats();
+  refreshBandwidth();
+  startBwCountdown();
   setInterval(refreshStats,     30000);
-  setInterval(refreshBandwidth, 30000);
-  // Always start health monitoring at page load so Live Streaming
-  // Sessions is updated even before the Health tab is opened.
+  setInterval(refreshBandwidth, 15000);
   startHealthUpdates();
   </script>
 </body>
