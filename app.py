@@ -17,7 +17,8 @@ from config import Config
 from database import Database
 from helper import (
     StreamingService, check_bandwidth_limit, format_size,
-    should_warn_global_bw,
+    should_warn_global_bw, is_exempt_from_user_bw,
+    should_warn_user_limit_exceeded,
 )
 from helper.stream import (
     get_active_session_count,
@@ -171,26 +172,30 @@ def build_app(bot: Bot, database) -> web.Application:
         # ── User bandwidth enforcement ─────────────────────────────
         user_id = str(file_data.get("user_id", ""))
         if user_id and Config.get("user_bw_mode", True):
-            allowed_user, user_stats = await database.check_user_bw_limit(user_id)
-            if not allowed_user:
-                max_ubw = Config.get("max_user_bandwidth", 10737418240)
-                days_r  = user_stats.get("days_remaining", "?")
-                # Fire-and-forget warning
-                async def _warn_user_limit():
-                    try:
-                        uid_int = int(user_id)
-                        await bot.send_message(
-                            uid_int,
-                            f"🚫 **Your monthly bandwidth limit has been reached!**\n\n"
-                            f"📊 Limit: `{format_size(max_ubw)}`\n"
-                            f"🔄 Resets in: `{days_r} days`\n\n"
-                            "Streaming and downloads are currently **blocked** until your limit resets "
-                            "or an admin manually resets your quota.",
-                        )
-                    except Exception:
-                        pass
-                asyncio.ensure_future(_warn_user_limit())
-                raise web.HTTPServiceUnavailable(reason="user bandwidth limit exceeded")
+            # Privileged users (owner / sudo) bypass bandwidth limits entirely
+            user_exempt = await is_exempt_from_user_bw(database, user_id)
+            if not user_exempt:
+                allowed_user, user_stats = await database.check_user_bw_limit(user_id)
+                if not allowed_user:
+                    max_ubw = Config.get("max_user_bandwidth", 10737418240)
+                    days_r  = user_stats.get("days_remaining", "?")
+                    # Send limit-exceeded warning once per cycle
+                    async def _warn_user_limit(uid=user_id, ubw=max_ubw, dr=days_r):
+                        try:
+                            should_send = await should_warn_user_limit_exceeded(database, uid)
+                            if should_send:
+                                await bot.send_message(
+                                    int(uid),
+                                    f"🚫 **Your monthly bandwidth limit has been reached!**\n\n"
+                                    f"📊 Limit: `{format_size(ubw)}`\n"
+                                    f"🔄 Resets in: `{dr} days`\n\n"
+                                    "Streaming and downloads are currently **blocked** until your limit resets "
+                                    "or an admin manually resets your quota.",
+                                )
+                        except Exception:
+                            pass
+                    asyncio.ensure_future(_warn_user_limit())
+                    raise web.HTTPServiceUnavailable(reason="user bandwidth limit exceeded")
 
         # ── Global bandwidth enforcement ───────────────────────────
         allowed, cycle_stats = await check_bandwidth_limit(database)
@@ -259,22 +264,28 @@ def build_app(bot: Bot, database) -> web.Application:
         if file_data:
             user_id = str(file_data.get("user_id", ""))
             if user_id and Config.get("user_bw_mode", True):
-                allowed_user, user_stats = await database.check_user_bw_limit(user_id)
-                if not allowed_user:
-                    max_ubw = Config.get("max_user_bandwidth", 10737418240)
-                    days_r  = user_stats.get("days_remaining", "?")
-                    async def _warn_dl_limit():
-                        try:
-                            await bot.send_message(
-                                int(user_id),
-                                f"🚫 **Download blocked — bandwidth limit reached!**\n\n"
-                                f"📊 Limit: `{format_size(max_ubw)}`\n"
-                                f"🔄 Resets in: `{days_r} days`",
-                            )
-                        except Exception:
-                            pass
-                    asyncio.ensure_future(_warn_dl_limit())
-                    raise web.HTTPServiceUnavailable(reason="user bandwidth limit exceeded")
+                # Privileged users (owner / sudo) bypass bandwidth limits
+                user_exempt = await is_exempt_from_user_bw(database, user_id)
+                if not user_exempt:
+                    allowed_user, user_stats = await database.check_user_bw_limit(user_id)
+                    if not allowed_user:
+                        max_ubw = Config.get("max_user_bandwidth", 10737418240)
+                        days_r  = user_stats.get("days_remaining", "?")
+                        # Send limit-exceeded warning once per cycle
+                        async def _warn_dl_limit(uid=user_id, ubw=max_ubw, dr=days_r):
+                            try:
+                                should_send = await should_warn_user_limit_exceeded(database, uid)
+                                if should_send:
+                                    await bot.send_message(
+                                        int(uid),
+                                        f"🚫 **Download blocked — bandwidth limit reached!**\n\n"
+                                        f"📊 Limit: `{format_size(ubw)}`\n"
+                                        f"🔄 Resets in: `{dr} days`",
+                                    )
+                            except Exception:
+                                pass
+                        asyncio.ensure_future(_warn_dl_limit())
+                        raise web.HTTPServiceUnavailable(reason="user bandwidth limit exceeded")
 
         return await _tracked_stream(request, file_hash, is_download=True)
 
@@ -531,7 +542,7 @@ def build_app(bot: Bot, database) -> web.Application:
 
     # ── TWA API: Validate + get user data ─────────────────────
     async def twa_api_auth(request: web.Request):
-        """Validate Telegram initData and return user info + limits."""
+        """Validate Telegram initData and return user info + limits + role."""
         try:
             body = await request.json()
             init_data = body.get("initData", "")
@@ -543,31 +554,69 @@ def build_app(bot: Bot, database) -> web.Application:
                 return web.json_response({"ok": False, "error": "invalid initData"}, status=403)
 
             user_id = str(user_data.get("id", ""))
+
+            # ── Role determination ────────────────────────────────
+            is_owner = False
+            is_sudo  = False
+            is_bw_exempt = False
+            try:
+                uid_int  = int(user_id) if user_id else 0
+                is_owner = uid_int in Config.OWNER_ID
+                if not is_owner and user_id:
+                    is_sudo = await database.is_sudo_user(user_id)
+                is_bw_exempt = is_owner or is_sudo
+            except Exception:
+                pass
+
+            role = "owner" if is_owner else ("sudo" if is_sudo else "user")
+
             bw_info = {}
             if user_id:
                 try:
-                    bw_stats = await database.get_user_bw(user_id)
-                    max_ubw  = Config.get("max_user_bandwidth", 10737418240)
-                    bw_info  = {
-                        "used":      bw_stats.get("used", 0),
-                        "limit":     max_ubw,
-                        "remaining": max(0, max_ubw - bw_stats.get("used", 0)),
-                        "pct":       bw_stats.get("pct", 0),
-                        "days_remaining": bw_stats.get("days_remaining", 30),
-                        "formatted": {
-                            "used":      format_size(bw_stats.get("used", 0)),
-                            "limit":     format_size(max_ubw),
-                            "remaining": format_size(max(0, max_ubw - bw_stats.get("used", 0))),
-                        },
-                    }
+                    max_ubw = Config.get("max_user_bandwidth", 10737418240)
+                    if is_bw_exempt:
+                        # Exempt users see "Unlimited" stats
+                        bw_info = {
+                            "used":           0,
+                            "limit":          0,
+                            "remaining":      0,
+                            "pct":            0,
+                            "days_remaining": 30,
+                            "exempt":         True,
+                            "formatted": {
+                                "used":      "0 B",
+                                "limit":     "Unlimited",
+                                "remaining": "Unlimited",
+                            },
+                        }
+                    else:
+                        bw_stats = await database.get_user_bw(user_id, lazy=True)
+                        bw_info  = {
+                            "used":           bw_stats.get("used", 0),
+                            "limit":          max_ubw,
+                            "remaining":      max(0, max_ubw - bw_stats.get("used", 0)),
+                            "pct":            bw_stats.get("pct", 0),
+                            "days_remaining": bw_stats.get("days_remaining", 30),
+                            "exempt":         False,
+                            "no_usage_yet":   bw_stats.get("no_usage_yet", False),
+                            "formatted": {
+                                "used":      format_size(bw_stats.get("used", 0)),
+                                "limit":     format_size(max_ubw),
+                                "remaining": format_size(max(0, max_ubw - bw_stats.get("used", 0))),
+                            },
+                        }
                 except Exception:
                     pass
 
             return web.json_response({
-                "ok":       True,
-                "user":     user_data,
-                "bw_info":  bw_info,
-                "bw_mode":  Config.get("bandwidth_mode", True),
+                "ok":           True,
+                "user":         user_data,
+                "role":         role,
+                "is_owner":     is_owner,
+                "is_sudo":      is_sudo,
+                "is_bw_exempt": is_bw_exempt,
+                "bw_info":      bw_info,
+                "bw_mode":      Config.get("bandwidth_mode", True),
                 "user_bw_mode": Config.get("user_bw_mode", True),
             }, headers={"Access-Control-Allow-Origin": "*"})
 
@@ -593,10 +642,13 @@ def build_app(bot: Bot, database) -> web.Application:
             limit   = min(int(request.rel_url.query.get("limit", 20)), 50)
             skip    = (page - 1) * limit
 
-            # Check user bw limit
+            # Check user bw limit — privileged users are always allowed
             allowed = True
+            is_bw_exempt = False
             if user_id and Config.get("user_bw_mode", True):
-                allowed, _ = await database.check_user_bw_limit(user_id)
+                is_bw_exempt = await is_exempt_from_user_bw(database, user_id)
+                if not is_bw_exempt:
+                    allowed, _ = await database.check_user_bw_limit(user_id)
 
             cursor, total = await database.find_files(user_id, [skip + 1, limit])
             files = []
@@ -615,12 +667,13 @@ def build_app(bot: Bot, database) -> web.Application:
                 })
 
             return web.json_response({
-                "ok":       True,
-                "files":    files,
-                "total":    total,
-                "page":     page,
-                "pages":    max(1, -(-total // limit)),
-                "allowed":  allowed,
+                "ok":           True,
+                "files":        files,
+                "total":        total,
+                "page":         page,
+                "pages":        max(1, -(-total // limit)),
+                "allowed":      allowed,
+                "is_bw_exempt": is_bw_exempt,
             }, headers={"Access-Control-Allow-Origin": "*"})
 
         except Exception as exc:

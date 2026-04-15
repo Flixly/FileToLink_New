@@ -35,6 +35,10 @@
       --badge-err-c:       #ff6b6b;
       --badge-warn:        rgba(246,211,101,.15);
       --badge-warn-c:      #f6d365;
+      --badge-gold:        rgba(255,215,0,.15);
+      --badge-gold-c:      #ffd700;
+      --badge-cyan:        rgba(79,172,254,.15);
+      --badge-cyan-c:      #4facfe;
       --item-hover:        rgba(255,255,255,.06);
     }
 
@@ -86,10 +90,9 @@
       text-transform: uppercase;
     }
     .nav-btn i { font-size: 1.15rem; }
-    .nav-btn.active {
-      color: var(--accent);
-    }
+    .nav-btn.active { color: var(--accent); }
     .nav-btn.active i { filter: drop-shadow(0 0 6px var(--accent-glow)); }
+    .nav-btn[style*="display:none"] { display: none !important; }
 
     /* ── Page System ── */
     .page {
@@ -150,30 +153,46 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── Error State ── */
-    .error-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-      padding: 40px 0;
-      text-align: center;
-      color: var(--text-secondary);
-    }
-    .error-state i { font-size: 2.4rem; color: var(--badge-err-c); }
-    .error-state p { font-size: .84rem; line-height: 1.6; max-width: 280px; }
-
-    /* ── Empty State ── */
-    .empty-state {
+    /* ── Error / Empty States ── */
+    .error-state, .empty-state {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 10px;
       padding: 48px 0;
       text-align: center;
+      color: var(--text-secondary);
     }
+    .error-state i { font-size: 2.4rem; color: var(--badge-err-c); }
+    .error-state p { font-size: .84rem; line-height: 1.6; max-width: 280px; }
     .empty-state i { font-size: 2.8rem; opacity: .35; }
-    .empty-state p { font-size: .84rem; color: var(--text-secondary); max-width: 260px; line-height: 1.6; }
+    .empty-state p { font-size: .84rem; max-width: 260px; line-height: 1.6; }
+
+    /* ── Exempt / Role Badge ── */
+    .exempt-banner {
+      background: linear-gradient(135deg, rgba(255,215,0,.12), rgba(255,165,0,.08));
+      border: 1px solid rgba(255,215,0,.3);
+      border-radius: 16px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .exempt-banner i { font-size: 1.2rem; color: #ffd700; flex-shrink: 0; }
+    .exempt-banner-text h4 {
+      font-size: .86rem; font-weight: 800; color: #ffd700; margin-bottom: 2px;
+    }
+    .exempt-banner-text p { font-size: .74rem; color: var(--text-secondary); line-height: 1.5; }
+
+    .role-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px; border-radius: 999px;
+      font-size: .68rem; font-weight: 700;
+    }
+    .role-owner  { background: var(--badge-gold); color: var(--badge-gold-c); }
+    .role-sudo   { background: var(--badge-cyan); color: var(--badge-cyan-c); }
+    .role-user   { background: var(--badge-ok);   color: var(--badge-ok-c); }
 
     /* ── Bandwidth Cards ── */
     .bw-cards {
@@ -201,33 +220,19 @@
     }
     .bw-card.global::before { background: linear-gradient(90deg,#4facfe,#00f2fe); }
     .bw-card.user::before   { background: linear-gradient(90deg,#667eea,#764ba2); }
+    .bw-card.exempt-card::before { background: linear-gradient(90deg,#ffd700,#fda085); }
 
     .bw-card-lbl {
-      font-size: .64rem;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-      color: var(--text-secondary);
-      font-weight: 600;
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      font-size: .64rem; text-transform: uppercase; letter-spacing: .08em;
+      color: var(--text-secondary); font-weight: 600; margin-bottom: 10px;
+      display: flex; align-items: center; gap: 6px;
     }
     .bw-card-lbl i { font-size: .7rem; }
-
     .bw-card-val {
-      font-size: 1.18rem;
-      font-weight: 800;
-      color: var(--text-primary);
-      margin-bottom: 2px;
-      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.18rem; font-weight: 800; color: var(--text-primary);
+      margin-bottom: 2px; font-family: 'JetBrains Mono', monospace;
     }
-
-    .bw-card-sub {
-      font-size: .7rem;
-      color: var(--text-secondary);
-      margin-bottom: 10px;
-    }
+    .bw-card-sub { font-size: .7rem; color: var(--text-secondary); margin-bottom: 10px; }
 
     .mini-bar { height: 5px; background: var(--bar-bg); border-radius: 999px; overflow: hidden; margin-bottom: 6px; }
     .mini-bar-fill { height: 100%; border-radius: 999px; transition: width .8s ease; }
@@ -235,30 +240,20 @@
     .mini-bar-fill.user   { background: linear-gradient(90deg,#667eea,#a78bfa); }
     .mini-bar-fill.warn   { background: linear-gradient(90deg,#f6d365,#fda085); }
     .mini-bar-fill.crit   { background: linear-gradient(90deg,#ff6b6b,#ee0979); }
+    .mini-bar-fill.exempt { background: linear-gradient(90deg,#ffd700,#fda085); width: 100% !important; }
 
-    .bw-card-pct {
-      font-size: .72rem;
-      font-weight: 700;
-      color: #4facfe;
-    }
+    .bw-card-pct { font-size: .72rem; font-weight: 700; color: #4facfe; }
     .bw-card-pct.user   { color: #a78bfa; }
     .bw-card-pct.warn   { color: #f6d365; }
     .bw-card-pct.crit   { color: #ff6b6b; }
+    .bw-card-pct.exempt { color: #ffd700; }
 
-    /* Reset countdown */
     .reset-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      background: rgba(79,172,254,.1);
-      border: 1px solid rgba(79,172,254,.2);
-      border-radius: 999px;
-      padding: 4px 10px;
-      font-size: .66rem;
-      font-weight: 700;
-      color: #4facfe;
-      font-family: 'JetBrains Mono', monospace;
-      margin-top: 6px;
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(79,172,254,.1); border: 1px solid rgba(79,172,254,.2);
+      border-radius: 999px; padding: 4px 10px;
+      font-size: .66rem; font-weight: 700; color: #4facfe;
+      font-family: 'JetBrains Mono', monospace; margin-top: 6px;
     }
     .reset-chip i { animation: tickPulse 1s ease-in-out infinite; }
     @keyframes tickPulse { 0%,100%{opacity:1;} 50%{opacity:.3;} }
@@ -285,26 +280,15 @@
     }
     .profile-info { flex: 1; min-width: 0; }
     .profile-name {
-      font-size: 1rem;
-      font-weight: 800;
-      color: var(--text-primary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      margin-bottom: 3px;
+      font-size: 1rem; font-weight: 800; color: var(--text-primary);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px;
     }
-    .profile-id {
-      font-size: .74rem;
-      color: var(--text-secondary);
-      font-family: 'JetBrains Mono', monospace;
-    }
+    .profile-id { font-size: .74rem; color: var(--text-secondary); font-family: 'JetBrains Mono', monospace; }
 
     /* ── Info Rows ── */
     .info-rows { margin-bottom: 16px; }
     .info-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      display: flex; justify-content: space-between; align-items: center;
       padding: 12px 16px;
       background: var(--card-bg);
       border: 1px solid var(--card-border);
@@ -312,154 +296,203 @@
       margin-bottom: 8px;
     }
     .ir-label {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: .83rem;
-      color: var(--text-secondary);
-      font-weight: 500;
+      display: flex; align-items: center; gap: 10px;
+      font-size: .83rem; color: var(--text-secondary); font-weight: 500;
     }
     .ir-icon {
-      width: 30px; height: 30px;
-      border-radius: 9px;
+      width: 30px; height: 30px; border-radius: 9px;
       display: flex; align-items: center; justify-content: center;
-      font-size: .78rem;
-      flex-shrink: 0;
+      font-size: .78rem; flex-shrink: 0;
     }
-    .ir-value {
-      font-size: .84rem;
-      font-weight: 700;
-      color: var(--text-primary);
-    }
+    .ir-value { font-size: .84rem; font-weight: 700; color: var(--text-primary); }
 
-    /* ── File List ── */
-    .file-list { display: flex; flex-direction: column; gap: 10px; }
+    /* ── Premium File List ── */
+    .file-list { display: flex; flex-direction: column; gap: 12px; }
 
     .file-card {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
-      border-radius: 18px;
+      border-radius: 20px;
       padding: 14px 16px;
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 14px;
       cursor: pointer;
-      transition: background .15s ease, transform .15s ease;
+      transition: background .15s ease, transform .15s ease, box-shadow .15s ease;
       -webkit-tap-highlight-color: transparent;
+      position: relative;
+      overflow: hidden;
     }
-    .file-card:active { background: var(--item-hover); transform: scale(.98); }
+    .file-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      border-radius: 20px 0 0 20px;
+    }
+    .file-card.video::before  { background: linear-gradient(180deg,#667eea,#764ba2); }
+    .file-card.audio::before  { background: linear-gradient(180deg,#43e97b,#38f9d7); }
+    .file-card.image::before  { background: linear-gradient(180deg,#4facfe,#00f2fe); }
+    .file-card.document::before { background: linear-gradient(180deg,#f6d365,#fda085); }
+
+    .file-card:active { background: var(--item-hover); transform: scale(.99); box-shadow: 0 4px 20px rgba(0,0,0,.18); }
 
     .file-icon {
-      width: 44px; height: 44px;
-      border-radius: 13px;
+      width: 48px; height: 48px;
+      border-radius: 14px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 1.1rem; color: #fff;
+      font-size: 1.2rem; color: #fff;
       flex-shrink: 0;
     }
-    .fi-video  { background: linear-gradient(135deg,#667eea,#764ba2); }
-    .fi-audio  { background: linear-gradient(135deg,#43e97b,#38f9d7); }
-    .fi-doc    { background: linear-gradient(135deg,#f6d365,#fda085); }
-    .fi-img    { background: linear-gradient(135deg,#4facfe,#00f2fe); }
+    .fi-video  { background: linear-gradient(135deg,#667eea,#764ba2); box-shadow: 0 4px 14px rgba(102,126,234,.35); }
+    .fi-audio  { background: linear-gradient(135deg,#43e97b,#38f9d7); box-shadow: 0 4px 14px rgba(67,233,123,.35); }
+    .fi-doc    { background: linear-gradient(135deg,#f6d365,#fda085); box-shadow: 0 4px 14px rgba(246,211,101,.35); }
+    .fi-img    { background: linear-gradient(135deg,#4facfe,#00f2fe); box-shadow: 0 4px 14px rgba(79,172,254,.35); }
 
     .file-info { flex: 1; min-width: 0; }
     .file-name {
-      font-size: .86rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      margin-bottom: 4px;
+      font-size: .88rem; font-weight: 700; color: var(--text-primary);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 5px;
     }
     .file-meta {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: .7rem;
-      color: var(--text-secondary);
+      display: flex; align-items: center; gap: 8px;
+      font-size: .7rem; color: var(--text-secondary);
+      flex-wrap: wrap;
     }
     .file-type-badge {
       background: rgba(102,126,234,.15);
       border: 1px solid rgba(102,126,234,.2);
-      border-radius: 999px;
-      padding: 2px 8px;
-      font-size: .62rem;
-      font-weight: 700;
-      color: #a78bfa;
-      text-transform: uppercase;
+      border-radius: 999px; padding: 2px 8px;
+      font-size: .62rem; font-weight: 700; color: #a78bfa; text-transform: uppercase;
+    }
+    .file-size-tag {
+      background: rgba(255,255,255,.06);
+      border-radius: 999px; padding: 2px 8px;
+      font-size: .62rem; font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
     }
 
+    /* ── File Action Buttons ── */
     .file-actions {
-      display: flex;
-      gap: 6px;
-      flex-shrink: 0;
+      display: flex; gap: 6px; flex-shrink: 0;
+      flex-direction: column;
     }
     .fa-btn {
-      width: 34px; height: 34px;
-      border-radius: 10px;
-      border: none;
+      width: 36px; height: 36px;
+      border-radius: 11px; border: none;
       display: flex; align-items: center; justify-content: center;
-      font-size: .8rem;
-      cursor: pointer;
+      font-size: .85rem; cursor: pointer;
       transition: all .15s ease;
     }
-    .fa-btn:active { transform: scale(.92); }
-    .fa-stream {
-      background: rgba(102,126,234,.18);
-      color: #a78bfa;
-    }
+    .fa-btn:active { transform: scale(.88); }
+    .fa-stream  { background: rgba(102,126,234,.18); color: #a78bfa; }
     .fa-stream:hover { background: rgba(102,126,234,.28); }
-    .fa-dl {
-      background: rgba(67,233,123,.13);
-      color: #43e97b;
-    }
+    .fa-dl      { background: rgba(67,233,123,.13); color: #43e97b; }
     .fa-dl:hover { background: rgba(67,233,123,.2); }
+    .fa-share   { background: rgba(79,172,254,.13); color: #4facfe; }
+    .fa-share:hover { background: rgba(79,172,254,.2); }
+
+    /* ── Share Modal ── */
+    .share-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.55);
+      z-index: 1000;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      justify-content: flex-end;
+      flex-direction: column;
+    }
+    .share-overlay.open { display: flex; }
+    .share-sheet {
+      background: var(--tg-sec-bg);
+      border-radius: 24px 24px 0 0;
+      padding: 20px 20px 32px;
+      border-top: 1px solid var(--card-border);
+      animation: slideUp .3s cubic-bezier(.22,.61,.36,1) both;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+    .share-sheet-handle {
+      width: 40px; height: 4px;
+      background: rgba(255,255,255,.2);
+      border-radius: 2px; margin: 0 auto 20px;
+    }
+    .share-sheet-title {
+      font-size: .9rem; font-weight: 800; margin-bottom: 16px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .share-sheet-title i { color: #4facfe; }
+    .share-file-preview {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 14px;
+      margin-bottom: 18px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .share-file-icon { width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: #fff; }
+    .share-file-name { font-size: .84rem; font-weight: 700; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
+    .share-file-size { font-size: .7rem; color: var(--text-secondary); margin-top: 2px; }
+
+    .share-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+    .share-action-btn {
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      padding: 16px 10px;
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: 16px; cursor: pointer;
+      transition: background .15s ease, transform .15s ease;
+      font-family: 'Poppins', sans-serif;
+    }
+    .share-action-btn:active { background: var(--item-hover); transform: scale(.97); }
+    .share-action-btn i { font-size: 1.4rem; }
+    .share-action-btn span { font-size: .72rem; font-weight: 700; color: var(--text-secondary); }
+
+    .share-link-row {
+      display: flex; gap: 8px; align-items: center;
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: 14px; padding: 10px 14px;
+      margin-top: 4px;
+    }
+    .share-link-text {
+      flex: 1; font-size: .74rem; font-family: 'JetBrains Mono', monospace;
+      color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .copy-btn {
+      border: none; background: rgba(102,126,234,.18); color: #a78bfa;
+      border-radius: 9px; padding: 6px 12px;
+      font-size: .72rem; font-weight: 700; cursor: pointer;
+      transition: background .15s;
+      font-family: 'Poppins', sans-serif;
+    }
+    .copy-btn:active { background: rgba(102,126,234,.28); }
+    .copy-btn.copied { background: rgba(67,233,123,.18); color: #43e97b; }
 
     /* ── Blocked Banner ── */
     .blocked-banner {
       background: rgba(255,107,107,.12);
       border: 1px solid rgba(255,107,107,.28);
-      border-radius: 16px;
-      padding: 14px 18px;
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      margin-bottom: 14px;
+      border-radius: 16px; padding: 14px 18px;
+      display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px;
     }
-    .blocked-banner i {
-      font-size: 1.2rem;
-      color: var(--badge-err-c);
-      flex-shrink: 0;
-      margin-top: 1px;
-    }
-    .blocked-banner-text h4 {
-      font-size: .86rem;
-      font-weight: 800;
-      color: var(--badge-err-c);
-      margin-bottom: 3px;
-    }
-    .blocked-banner-text p {
-      font-size: .76rem;
-      color: var(--text-secondary);
-      line-height: 1.55;
-    }
+    .blocked-banner i { font-size: 1.2rem; color: var(--badge-err-c); flex-shrink: 0; margin-top: 1px; }
+    .blocked-banner-text h4 { font-size: .86rem; font-weight: 800; color: var(--badge-err-c); margin-bottom: 3px; }
+    .blocked-banner-text p { font-size: .76rem; color: var(--text-secondary); line-height: 1.55; }
 
     /* ── Pagination ── */
     .pagination {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      padding: 16px 0;
+      display: flex; align-items: center; justify-content: center;
+      gap: 10px; padding: 16px 0;
     }
     .pg-btn {
-      width: 38px; height: 38px;
-      border-radius: 11px;
-      border: 1px solid var(--card-border);
-      background: var(--card-bg);
-      color: var(--text-primary);
-      font-size: .82rem;
-      cursor: pointer;
+      width: 38px; height: 38px; border-radius: 11px;
+      border: 1px solid var(--card-border); background: var(--card-bg);
+      color: var(--text-primary); font-size: .82rem; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
       transition: all .15s ease;
     }
@@ -480,22 +513,37 @@
     .badge-err::before  { background: var(--badge-err-c); }
     .badge-warn { background: var(--badge-warn); color: var(--badge-warn-c); }
     .badge-warn::before { background: var(--badge-warn-c); }
+    .badge-gold { background: var(--badge-gold); color: var(--badge-gold-c); }
+    .badge-gold::before { background: var(--badge-gold-c); }
 
     /* ── Scrollbar ── */
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 2px; }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+      background: rgba(30,30,60,.95); color: #fff;
+      padding: 10px 20px; border-radius: 999px;
+      font-size: .8rem; font-weight: 600;
+      z-index: 9999; opacity: 0;
+      transition: opacity .25s ease;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; }
   </style>
 </head>
 <body>
 
   <!-- ── Nav Bar ── -->
-  <nav class="nav-bar" role="tablist">
+  <nav class="nav-bar" role="tablist" id="nav-bar">
     <button class="nav-btn active" data-page="files" onclick="switchPage('files', this)">
       <i class="fa-solid fa-folder-open"></i>
       <span>Files</span>
     </button>
-    <button class="nav-btn" data-page="bandwidth" onclick="switchPage('bandwidth', this)">
+    <button class="nav-btn" data-page="bandwidth" id="nav-bw-btn" onclick="switchPage('bandwidth', this)">
       <i class="fa-solid fa-satellite-dish"></i>
       <span>Bandwidth</span>
     </button>
@@ -513,6 +561,15 @@
         My Files
       </div>
       <span id="files-count" style="font-size:.8rem;color:var(--text-secondary);font-weight:600;"></span>
+    </div>
+
+    <!-- Exempt banner (privileged users) -->
+    <div class="exempt-banner" id="exempt-banner" style="display:none;">
+      <i class="fa-solid fa-crown"></i>
+      <div class="exempt-banner-text">
+        <h4 id="exempt-title">Unlimited Access</h4>
+        <p id="exempt-desc">Bandwidth limits do not apply to your account.</p>
+      </div>
     </div>
 
     <!-- Blocked banner (shown when user is over limit) -->
@@ -549,7 +606,7 @@
     </div>
   </div>
 
-  <!-- ═══════════ BANDWIDTH PAGE ═══════════ -->
+  <!-- ═══════════ BANDWIDTH PAGE (admin/sudo only) ═══════════ -->
   <div class="page" id="page-bandwidth">
     <div class="sec-header">
       <div class="sec-title">
@@ -576,7 +633,7 @@
         </div>
 
         <!-- Per-user -->
-        <div class="bw-card user">
+        <div class="bw-card user" id="user-bw-card-twa">
           <div class="bw-card-lbl"><i class="fa-solid fa-user-shield"></i> Your Limit</div>
           <div class="bw-card-val" id="u-used-twa">—</div>
           <div class="bw-card-sub" id="u-sub-twa">of — total</div>
@@ -623,6 +680,13 @@
           </span>
           <span class="badge badge-ok" id="bw-mode-twa">Active</span>
         </div>
+        <div class="info-row" id="users-over-row" style="display:none;">
+          <span class="ir-label">
+            <span class="ir-icon" style="background:rgba(255,107,107,.15)"><i class="fa-solid fa-users" style="color:#ff6b6b"></i></span>
+            Users Over Limit
+          </span>
+          <span class="ir-value" id="users-over-twa" style="color:#ff6b6b">—</span>
+        </div>
       </div>
 
     </div>
@@ -650,6 +714,16 @@
           <div class="profile-name" id="p-name">—</div>
           <div class="profile-id" id="p-id">ID: —</div>
         </div>
+        <span class="role-badge" id="p-role-badge" style="display:none;"></span>
+      </div>
+
+      <!-- Exempt notice in profile -->
+      <div class="exempt-banner" id="profile-exempt-banner" style="display:none; margin-bottom:16px;">
+        <i class="fa-solid fa-infinity"></i>
+        <div class="exempt-banner-text">
+          <h4>Bandwidth Exempt</h4>
+          <p id="profile-exempt-desc">Your role bypasses all bandwidth restrictions.</p>
+        </div>
       </div>
 
       <div class="info-rows">
@@ -662,26 +736,33 @@
         </div>
         <div class="info-row">
           <span class="ir-label">
+            <span class="ir-icon" style="background:rgba(102,126,234,.15)"><i class="fa-solid fa-shield-halved" style="color:#667eea"></i></span>
+            Role
+          </span>
+          <span class="ir-value" id="p-role">User</span>
+        </div>
+        <div class="info-row" id="p-bw-used-row">
+          <span class="ir-label">
             <span class="ir-icon" style="background:rgba(246,211,101,.15)"><i class="fa-solid fa-upload" style="color:#f6d365"></i></span>
             BW Used (Month)
           </span>
           <span class="ir-value" id="p-bw-used">—</span>
         </div>
-        <div class="info-row">
+        <div class="info-row" id="p-bw-rem-row">
           <span class="ir-label">
             <span class="ir-icon" style="background:rgba(67,233,123,.15)"><i class="fa-solid fa-battery-three-quarters" style="color:#43e97b"></i></span>
             BW Remaining
           </span>
           <span class="ir-value" id="p-bw-rem" style="color:#43e97b">—</span>
         </div>
-        <div class="info-row">
+        <div class="info-row" id="p-bw-limit-row">
           <span class="ir-label">
             <span class="ir-icon" style="background:rgba(102,126,234,.15)"><i class="fa-solid fa-gauge-high" style="color:#667eea"></i></span>
             Monthly Limit
           </span>
           <span class="ir-value" id="p-bw-limit">—</span>
         </div>
-        <div class="info-row">
+        <div class="info-row" id="p-bw-pct-row">
           <span class="ir-label">
             <span class="ir-icon" style="background:rgba(167,139,250,.15)"><i class="fa-solid fa-chart-line" style="color:#a78bfa"></i></span>
             Usage
@@ -697,13 +778,61 @@
     </div>
   </div>
 
+  <!-- ═══════════ SHARE BOTTOM SHEET ═══════════ -->
+  <div class="share-overlay" id="share-overlay" onclick="closeShare(event)">
+    <div class="share-sheet" onclick="event.stopPropagation()">
+      <div class="share-sheet-handle"></div>
+      <div class="share-sheet-title">
+        <i class="fa-solid fa-share-nodes"></i>
+        Share File
+      </div>
+
+      <!-- File preview inside share sheet -->
+      <div class="share-file-preview" id="share-preview">
+        <div class="share-file-icon" id="share-icon"><i class="fa-solid fa-file"></i></div>
+        <div style="flex:1;min-width:0;">
+          <div class="share-file-name" id="share-fname">File Name</div>
+          <div class="share-file-size" id="share-fsize">—</div>
+        </div>
+      </div>
+
+      <!-- Action grid -->
+      <div class="share-actions">
+        <button class="share-action-btn" onclick="shareViaForward()">
+          <i class="fa-brands fa-telegram" style="color:#26a4da"></i>
+          <span>Forward in Telegram</span>
+        </button>
+        <button class="share-action-btn" onclick="shareCopyLink()">
+          <i class="fa-solid fa-link" style="color:#a78bfa"></i>
+          <span>Copy Stream Link</span>
+        </button>
+        <button class="share-action-btn" onclick="shareDownloadLink()">
+          <i class="fa-solid fa-cloud-arrow-down" style="color:#43e97b"></i>
+          <span>Copy Download Link</span>
+        </button>
+        <button class="share-action-btn" onclick="shareNative()">
+          <i class="fa-solid fa-arrow-up-from-bracket" style="color:#4facfe"></i>
+          <span>System Share</span>
+        </button>
+      </div>
+
+      <!-- Link row -->
+      <div class="share-link-row">
+        <span class="share-link-text" id="share-link-preview">—</span>
+        <button class="copy-btn" id="share-copy-btn" onclick="shareCopyLink()">Copy</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
   <script>
   // ── Telegram Web App init ───────────────────────────────────
   const tg = window.Telegram?.WebApp;
   if (tg) {
     tg.ready();
     tg.expand();
-    // Sync Telegram theme
     document.documentElement.style.setProperty('--tg-bg', tg.themeParams.bg_color || '#0f0c29');
     document.documentElement.style.setProperty('--tg-sec-bg', tg.themeParams.secondary_bg_color || '#302b63');
     document.documentElement.style.setProperty('--tg-text', tg.themeParams.text_color || '#ffffff');
@@ -713,6 +842,17 @@
 
   const INIT_DATA = tg?.initData || '';
 
+  // ── Global state ────────────────────────────────────────────
+  let currentPage = 1;
+  let totalPages  = 1;
+  let userAllowed = true;
+  let isBwExempt  = false;
+  let userRole    = 'user';   // 'user' | 'sudo' | 'owner'
+  let isPrivileged = false;   // sudo or owner
+
+  // Share state
+  let _shareFile = null;
+
   // ── Page navigation ─────────────────────────────────────────
   function switchPage(name, btn) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -720,7 +860,18 @@
     document.getElementById('page-' + name).classList.add('active');
     btn.classList.add('active');
     if (name === 'bandwidth') loadBandwidth();
-    if (name === 'profile') loadProfile();
+    if (name === 'profile')   loadProfile();
+  }
+
+  // ── Apply role-based nav visibility ─────────────────────────
+  function applyNavVisibility() {
+    const bwBtn = document.getElementById('nav-bw-btn');
+    if (!isPrivileged) {
+      // Normal users: hide bandwidth tab
+      bwBtn.style.display = 'none';
+    } else {
+      bwBtn.style.display = '';
+    }
   }
 
   // ── Helpers ────────────────────────────────────────────────
@@ -745,19 +896,30 @@
     if (el) el.textContent = val ?? '—';
   }
 
-  function getFileIcon(fileType, mimeType) {
+  function getFileIcon(fileType) {
     if (fileType === 'video')  return ['fi-video', 'fa-solid fa-film'];
-    if (fileType === 'audio')  return ['fi-audio', 'fa-solid fa-music'];
+    if (fileType === 'audio')  return ['fa-audio', 'fa-solid fa-music'];
     if (fileType === 'image')  return ['fi-img',   'fa-solid fa-image'];
     return ['fi-doc', 'fa-solid fa-file'];
   }
 
-  // ── Files Page ─────────────────────────────────────────────
-  let currentPage = 1;
-  let totalPages  = 1;
-  let userAllowed = true;
-  let _filesLoaded = false;
+  function escHtml(str) {
+    return String(str).replace(/[&<>"']/g, m => (
+      {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]
+    ));
+  }
 
+  // ── Toast ───────────────────────────────────────────────────
+  let _toastTimer = null;
+  function showToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+  }
+
+  // ── Files Page ─────────────────────────────────────────────
   async function loadFiles(page = 1) {
     if (!INIT_DATA) {
       document.getElementById('files-loader').style.display = 'none';
@@ -780,9 +942,11 @@
 
       document.getElementById('files-loader').style.display = 'none';
       userAllowed = d.allowed !== false;
+      isBwExempt  = d.is_bw_exempt === true;
 
-      // Show blocked banner if over limit
-      document.getElementById('blocked-banner').style.display = userAllowed ? 'none' : '';
+      // Update exempt/blocked banners
+      document.getElementById('exempt-banner').style.display  = isBwExempt  ? '' : 'none';
+      document.getElementById('blocked-banner').style.display = (!userAllowed && !isBwExempt) ? '' : 'none';
 
       if (!d.files || d.files.length === 0) {
         document.getElementById('files-empty').style.display = '';
@@ -796,30 +960,34 @@
 
       const list = document.getElementById('file-list');
       d.files.forEach(file => {
-        const [iconClass, iconTag] = getFileIcon(file.file_type, file.mime_type);
+        const [iconClass, iconTag] = getFileIcon(file.file_type);
         const isStreamable = ['video', 'audio'].includes(file.file_type);
+        const canAct = userAllowed || isBwExempt;
         const card = document.createElement('div');
-        card.className = 'file-card';
+        card.className = `file-card ${file.file_type || 'document'}`;
         card.innerHTML = `
           <div class="file-icon ${iconClass}"><i class="${iconTag}"></i></div>
           <div class="file-info">
-            <div class="file-name">${escHtml(file.file_name)}</div>
+            <div class="file-name" title="${escHtml(file.file_name)}">${escHtml(file.file_name)}</div>
             <div class="file-meta">
-              <span class="file-type-badge">${file.file_type}</span>
-              <span>${file.file_size_fmt}</span>
+              <span class="file-type-badge">${escHtml(file.file_type)}</span>
+              <span class="file-size-tag">${escHtml(file.file_size_fmt)}</span>
             </div>
           </div>
           <div class="file-actions">
-            ${isStreamable && userAllowed ? `
-              <button class="fa-btn fa-stream" onclick="openStream('${file.stream_url}', '${escHtml(file.file_name)}')" title="Stream">
+            ${isStreamable && canAct ? `
+              <button class="fa-btn fa-stream" onclick="openStream('${file.stream_url}','${escHtml(file.file_name)}')" title="Stream">
                 <i class="fa-solid fa-play"></i>
               </button>
             ` : ''}
-            ${userAllowed ? `
+            ${canAct ? `
               <button class="fa-btn fa-dl" onclick="downloadFile('${file.download_url}')" title="Download">
                 <i class="fa-solid fa-cloud-arrow-down"></i>
               </button>
             ` : ''}
+            <button class="fa-btn fa-share" onclick='openShare(${JSON.stringify(file)})' title="Share">
+              <i class="fa-solid fa-share-nodes"></i>
+            </button>
           </div>
         `;
         list.appendChild(card);
@@ -841,7 +1009,7 @@
   }
 
   function openStream(url, name) {
-    if (!userAllowed) {
+    if (!userAllowed && !isBwExempt) {
       tg?.showAlert('Your bandwidth limit has been reached. Streaming is temporarily blocked.');
       return;
     }
@@ -849,20 +1017,99 @@
   }
 
   function downloadFile(url) {
-    if (!userAllowed) {
+    if (!userAllowed && !isBwExempt) {
       tg?.showAlert('Your bandwidth limit has been reached. Downloads are temporarily blocked.');
       return;
     }
     tg?.openLink(url);
   }
 
-  function escHtml(str) {
-    return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  // ── Share Flow ──────────────────────────────────────────────
+  function openShare(file) {
+    _shareFile = file;
+    const [iconClass, iconTag] = getFileIcon(file.file_type);
+    const icon = document.getElementById('share-icon');
+    icon.className = `share-file-icon ${iconClass}`;
+    icon.innerHTML = `<i class="${iconTag}"></i>`;
+    setEl('share-fname', file.file_name);
+    setEl('share-fsize', file.file_size_fmt || '—');
+    setEl('share-link-preview', file.stream_url || '—');
+    // Reset copy button
+    const cb = document.getElementById('share-copy-btn');
+    cb.textContent = 'Copy'; cb.className = 'copy-btn';
+    document.getElementById('share-overlay').classList.add('open');
+  }
+
+  function closeShare(e) {
+    if (!e || e.target === document.getElementById('share-overlay')) {
+      document.getElementById('share-overlay').classList.remove('open');
+    }
+  }
+
+  function shareViaForward() {
+    if (!_shareFile) return;
+    // Use Telegram's inline share / switchInlineQuery where available
+    const text = `📁 *${_shareFile.file_name}*\n📦 Size: ${_shareFile.file_size_fmt}\n\n🔗 Stream: ${_shareFile.stream_url}\n⬇️ Download: ${_shareFile.download_url}`;
+    const url   = `https://t.me/share/url?url=${encodeURIComponent(_shareFile.stream_url)}&text=${encodeURIComponent('📁 ' + _shareFile.file_name + '\n📦 ' + _shareFile.file_size_fmt)}`;
+    if (tg?.openTelegramLink) {
+      tg.openTelegramLink(url);
+    } else {
+      tg?.openLink(url);
+    }
+    document.getElementById('share-overlay').classList.remove('open');
+  }
+
+  async function shareCopyLink() {
+    if (!_shareFile) return;
+    const link = _shareFile.stream_url;
+    try {
+      await navigator.clipboard.writeText(link);
+    } catch {
+      // Fallback
+      const ta = document.createElement('textarea');
+      ta.value = link; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    const cb = document.getElementById('share-copy-btn');
+    cb.textContent = '✓ Copied!'; cb.className = 'copy-btn copied';
+    showToast('Stream link copied!');
+    setTimeout(() => { cb.textContent = 'Copy'; cb.className = 'copy-btn'; }, 2000);
+  }
+
+  async function shareDownloadLink() {
+    if (!_shareFile) return;
+    const link = _shareFile.download_url;
+    try {
+      await navigator.clipboard.writeText(link);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = link; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta);
+    }
+    showToast('Download link copied!');
+    document.getElementById('share-overlay').classList.remove('open');
+  }
+
+  function shareNative() {
+    if (!_shareFile) return;
+    const data = {
+      title: _shareFile.file_name,
+      text:  `📁 ${_shareFile.file_name}\n📦 ${_shareFile.file_size_fmt}`,
+      url:   _shareFile.stream_url,
+    };
+    if (navigator.share) {
+      navigator.share(data).catch(() => {});
+    } else {
+      shareCopyLink();
+    }
+    document.getElementById('share-overlay').classList.remove('open');
   }
 
   // ── Bandwidth Page ─────────────────────────────────────────
   let _bwTimer = null;
-  let _bwResetEnd = null;
 
   async function loadBandwidth() {
     document.getElementById('bw-loader').style.display  = '';
@@ -870,15 +1117,15 @@
     document.getElementById('bw-error').style.display   = 'none';
 
     try {
-      // Fetch global BW
-      const gRes = await fetch('/api/twa/bandwidth');
+      // Fetch global BW via full endpoint
+      const gRes  = await fetch('/api/bandwidth/full');
       const gData = await gRes.json();
 
-      // Fetch user BW (requires auth)
+      // Fetch user BW + role via auth
       let uData = null;
       if (INIT_DATA) {
         try {
-          const aRes = await fetch('/api/twa/auth', {
+          const aRes  = await fetch('/api/twa/auth', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ initData: INIT_DATA }),
@@ -892,8 +1139,8 @@
       document.getElementById('bw-content').style.display = '';
 
       // Global card
-      const gPct = gData.pct ?? 0;
-      setEl('g-used-twa', gData.formatted?.used   ?? '—');
+      const gPct = gData.percentage ?? 0;
+      setEl('g-used-twa', gData.formatted?.total_bandwidth ?? '—');
       setEl('g-sub-twa',  `of ${gData.formatted?.limit ?? '—'} total`);
       setEl('g-pct-twa',  gPct + '%');
       const gBar = document.getElementById('g-bar-twa');
@@ -904,14 +1151,31 @@
       setEl('g-rem-twa',    gData.formatted?.remaining ?? '—');
       setEl('bw-reset-days-twa', `${gData.days_remaining ?? '—'} days`);
 
+      // Users over limit row (admin view)
+      if (isPrivileged && gData.users_over_limit != null) {
+        document.getElementById('users-over-row').style.display = '';
+        setEl('users-over-twa', gData.users_over_limit);
+      }
+
       // Reset countdown
       if (gData.days_remaining != null) {
-        _bwResetEnd = Math.floor(Date.now() / 1000) + (gData.days_remaining * 86400);
         setEl('g-reset-twa', fmtCountdown(gData.days_remaining * 86400));
       }
 
-      // User card
-      if (uData) {
+      // User BW card
+      if (uData && uData.exempt) {
+        // Exempt user card
+        const card = document.getElementById('user-bw-card-twa');
+        if (card) card.classList.add('exempt-card');
+        setEl('u-used-twa', '∞');
+        setEl('u-sub-twa',  'Bandwidth Exempt');
+        const uBar = document.getElementById('u-bar-twa');
+        if (uBar) { uBar.style.width = '100%'; uBar.className = 'mini-bar-fill exempt'; }
+        const uPctEl = document.getElementById('u-pct-twa');
+        if (uPctEl) { uPctEl.className = 'bw-card-pct exempt'; uPctEl.textContent = '∞'; }
+        setEl('u-reset-twa', 'Unlimited');
+        setEl('u-rem-twa', 'Unlimited');
+      } else if (uData) {
         const uPct = uData.pct ?? 0;
         setEl('u-used-twa', uData.formatted?.used      ?? '—');
         setEl('u-sub-twa',  `of ${uData.formatted?.limit ?? '—'} total`);
@@ -926,6 +1190,14 @@
         setEl('u-used-twa', 'N/A');
         setEl('u-sub-twa',  'Login required');
         setEl('u-reset-twa', '—');
+      }
+
+      // BW mode badge
+      const modeEl = document.getElementById('bw-mode-twa');
+      if (modeEl) {
+        const active = gData.bandwidth_mode !== false;
+        modeEl.className = 'badge ' + (active ? 'badge-ok' : 'badge-err');
+        modeEl.textContent = active ? 'Active' : 'Inactive';
       }
 
     } catch(err) {
@@ -954,19 +1226,62 @@
       document.getElementById('profile-loader').style.display  = 'none';
       document.getElementById('profile-content').style.display = '';
 
-      const user   = data.user || {};
-      const bwInfo = data.bw_info || {};
-      const fname  = [user.first_name, user.last_name].filter(Boolean).join(' ') || 'Telegram User';
+      const user      = data.user    || {};
+      const bwInfo    = data.bw_info || {};
+      const role      = data.role    || 'user';
+      const isExempt  = data.is_bw_exempt === true;
+      const fname     = [user.first_name, user.last_name].filter(Boolean).join(' ') || 'Telegram User';
 
       setEl('p-name',     fname);
       setEl('p-id',       `ID: ${user.id || '—'}`);
       setEl('p-username', user.username ? `@${user.username}` : 'N/A');
 
-      if (bwInfo.formatted) {
-        setEl('p-bw-used',  bwInfo.formatted.used);
-        setEl('p-bw-rem',   bwInfo.formatted.remaining);
-        setEl('p-bw-limit', bwInfo.formatted.limit);
-        setEl('p-bw-pct',   `${bwInfo.pct ?? 0}%`);
+      // Role badge in profile header
+      const roleMap = {
+        owner: { label: '👑 Owner',    cls: 'role-badge role-owner' },
+        sudo:  { label: '⚡ Sudo',     cls: 'role-badge role-sudo'  },
+        user:  { label: '👤 User',     cls: 'role-badge role-user'  },
+      };
+      const roleInfo = roleMap[role] || roleMap.user;
+      setEl('p-role', roleInfo.label.replace(/^[^ ]+ /, ''));
+      const roleBadge = document.getElementById('p-role-badge');
+      if (roleBadge) {
+        roleBadge.textContent = roleInfo.label;
+        roleBadge.className   = roleInfo.cls;
+        roleBadge.style.display = '';
+      }
+
+      // Exempt notice
+      const exemptBanner = document.getElementById('profile-exempt-banner');
+      if (exemptBanner) {
+        exemptBanner.style.display = isExempt ? '' : 'none';
+        if (isExempt) {
+          const desc = role === 'owner'
+            ? 'As the Owner, you have unlimited bandwidth access.'
+            : 'As a Sudo user, bandwidth limits do not apply to you.';
+          setEl('profile-exempt-desc', desc);
+        }
+      }
+
+      // BW stats
+      if (isExempt) {
+        // Show "Unlimited" labels for exempt users
+        setEl('p-bw-used',  '0 B (Exempt)');
+        setEl('p-bw-rem',   'Unlimited');
+        setEl('p-bw-limit', 'Unlimited');
+        setEl('p-bw-pct',   '0% (Exempt)');
+      } else if (bwInfo.formatted) {
+        if (bwInfo.no_usage_yet) {
+          setEl('p-bw-used',  '0 B');
+          setEl('p-bw-rem',   bwInfo.formatted.limit || '—');
+          setEl('p-bw-limit', bwInfo.formatted.limit || '—');
+          setEl('p-bw-pct',   '0%');
+        } else {
+          setEl('p-bw-used',  bwInfo.formatted.used);
+          setEl('p-bw-rem',   bwInfo.formatted.remaining);
+          setEl('p-bw-limit', bwInfo.formatted.limit);
+          setEl('p-bw-pct',   `${bwInfo.pct ?? 0}%`);
+        }
       }
 
     } catch(err) {
@@ -975,8 +1290,41 @@
     }
   }
 
-  // ── Initial load ───────────────────────────────────────────
-  loadFiles(1);
+  // ── Bootstrap: fetch role before first load ─────────────────
+  async function bootstrap() {
+    if (!INIT_DATA) {
+      applyNavVisibility();
+      loadFiles(1);
+      return;
+    }
+    try {
+      const res  = await fetch('/api/twa/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: INIT_DATA }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        userRole     = data.role      || 'user';
+        isBwExempt   = data.is_bw_exempt === true;
+        isPrivileged = data.is_owner || data.is_sudo || false;
+
+        // Update exempt banner content
+        if (isBwExempt) {
+          setEl('exempt-title', userRole === 'owner' ? '👑 Unlimited Access' : '⚡ Bandwidth Exempt');
+          setEl('exempt-desc', userRole === 'owner'
+            ? 'As the Owner, bandwidth restrictions do not apply to your account.'
+            : 'As a Sudo user, you have unlimited bandwidth access.');
+        }
+      }
+    } catch(e) {}
+
+    applyNavVisibility();
+    loadFiles(1);
+  }
+
+  // ── Start ────────────────────────────────────────────────────
+  bootstrap();
   </script>
 </body>
 </html>

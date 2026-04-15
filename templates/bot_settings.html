@@ -850,6 +850,12 @@
                 <span class="bw-stat-label"><i class="fa-solid fa-calendar-day" style="color:#fa709a"></i> Today</span>
                 <span class="bw-stat-value" id="g-today">{{ bw_today }}</span>
               </div>
+              <div class="bw-stat-row">
+                <span class="bw-stat-label"><i class="fa-solid fa-toggle-on" style="color:#667eea"></i> Enforcement</span>
+                <span class="badge {{ 'badge-ok' if bw_mode else 'badge-error' }}" id="bw-mode-badge">
+                  {{ 'Enabled' if bw_mode else 'Disabled' }}
+                </span>
+              </div>
             </div>
             <div class="bw-card-progress">
               <div class="bw-card-progress-row">
@@ -890,12 +896,6 @@
                 <span class="bw-stat-label"><i class="fa-solid fa-users" style="color:#4facfe"></i> Users Over Limit</span>
                 <span class="bw-stat-value" id="u-over">—</span>
               </div>
-              <div class="bw-stat-row">
-                <span class="bw-stat-label"><i class="fa-solid fa-circle-check" style="color:#43e97b"></i> BW Mode</span>
-                <span class="badge {{ 'badge-ok' if bw_mode else 'badge-error' }}" id="bw-mode-badge">
-                  {{ 'Active' if bw_mode else 'Inactive' }}
-                </span>
-              </div>
             </div>
             <div class="bw-card-progress">
               <div class="bw-card-progress-row">
@@ -915,70 +915,6 @@
           </div>
 
         </div><!-- /bw-cards-grid -->
-
-        <!-- ── Legacy detail rows ────────────────────────────── -->
-        <div class="info-section">
-          <div class="info-section-title"><i class="fa-solid fa-circle-info"></i> Detailed Breakdown</div>
-          <div class="info-row">
-            <span class="info-label">
-              <span class="il-icon" style="background:rgba(102,126,234,.2)"><i class="fa-solid fa-toggle-on" style="color:#667eea"></i></span>
-              BW Enforcement
-            </span>
-            <span class="badge {{ 'badge-ok' if bw_mode else 'badge-error' }}" id="bw-mode-badge2">
-              {{ 'Enabled' if bw_mode else 'Disabled' }}
-            </span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">
-              <span class="il-icon" style="background:rgba(79,172,254,.2)"><i class="fa-solid fa-gauge-high" style="color:#4facfe"></i></span>
-              Total Limit
-            </span>
-            <span class="info-value" id="bw-limit">{{ bw_limit }}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">
-              <span class="il-icon" style="background:rgba(246,211,101,.2)"><i class="fa-solid fa-upload" style="color:#f6d365"></i></span>
-              Used (Cycle)
-            </span>
-            <span class="info-value" id="bw-used">{{ bw_used }}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">
-              <span class="il-icon" style="background:rgba(250,112,154,.2)"><i class="fa-solid fa-calendar-day" style="color:#fa709a"></i></span>
-              Used Today
-            </span>
-            <span class="info-value" id="bw-today">{{ bw_today }}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">
-              <span class="il-icon" style="background:rgba(67,233,123,.2)"><i class="fa-solid fa-battery-three-quarters" style="color:#43e97b"></i></span>
-              Remaining
-            </span>
-            <span class="info-value" id="bw-remaining">{{ bw_remaining }}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">
-              <span class="il-icon" style="background:rgba(160,140,255,.2)"><i class="fa-solid fa-rotate" style="color:#a78bfa"></i></span>
-              Cycle Reset
-            </span>
-            <span class="info-value" id="bw-days">In {{ bw_days_reset }} days</span>
-          </div>
-        </div>
-
-        <div class="bw-usage-block">
-          <div class="bw-header">
-            <span class="bw-label">Overall Usage Progress</span>
-            <span class="bw-pct" id="bw-pct">{{ bw_pct }}%</span>
-          </div>
-          <div class="bw-bar-bg">
-            <div class="bw-bar-fill {% if bw_pct > 90 %}crit{% elif bw_pct > 70 %}warn{% endif %}"
-                 id="bw-bar" style="width:{{ bw_pct }}%;"></div>
-          </div>
-          <div class="bw-meta">
-            <span id="bw-meta-used">{{ bw_used }} used</span>
-            <span id="bw-meta-limit">{{ bw_limit }} total</span>
-          </div>
-        </div>
 
         <div class="btn-row">
           <a href="/" class="btn btn-primary"><i class="fa-solid fa-house"></i> Home</a>
@@ -1222,27 +1158,12 @@
       if (!r.ok) throw new Error(r.statusText);
       const d = await r.json();
       const f = d.formatted || {};
-
-      // Update legacy detail rows
-      const setV = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v ?? '—'; };
-      setV('bw-limit',     f.limit);
-      setV('bw-used',      f.total_bandwidth);
-      setV('bw-today',     f.today_bandwidth);
-      setV('bw-remaining', f.remaining);
-
+      const pct  = d.percentage ?? 0;
       const daysR = d.days_remaining ?? 30;
-      setV('bw-days', `In ${daysR} day${daysR !== 1 ? 's' : ''}`);
 
-      const pct = d.percentage ?? 0;
-      setV('bw-pct',        pct + '%');
-      setV('bw-meta-used',  (f.total_bandwidth ?? '—') + ' used');
-      setV('bw-meta-limit', (f.limit ?? '—') + ' total');
+      const setV = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v ?? '—'; };
 
-      // Main bar
-      const bar = document.getElementById('bw-bar');
-      if (bar) { bar.style.width = pct + '%'; setBwBarClass(bar, pct); }
-
-      // Global BW card
+      // ── Global BW card ──────────────────────────────────────
       setV('g-limit',     f.limit);
       setV('g-used',      f.total_bandwidth);
       setV('g-remaining', f.remaining);
@@ -1250,28 +1171,29 @@
       setV('g-pct',       pct + '%');
       const gBar = document.getElementById('g-bar');
       if (gBar) { gBar.style.width = pct + '%'; setBwBarClass(gBar, pct); }
-      const gPct = document.getElementById('g-pct');
-      if (gPct) { gPct.className = 'bw-card-progress-pct' + (pct > 90 ? ' crit' : pct > 70 ? ' warn' : ''); }
+      const gPctEl = document.getElementById('g-pct');
+      if (gPctEl) { gPctEl.className = 'bw-card-progress-pct' + (pct > 90 ? ' crit' : pct > 70 ? ' warn' : ''); }
 
-      // User BW card
+      // ── Per-User BW card ────────────────────────────────────
       setV('u-limit', f.user_limit ?? 'N/A');
       setV('u-over',  d.users_over_limit ?? '—');
       setV('u-gpct',  pct + '%');
       const uBar = document.getElementById('u-gbar');
       if (uBar) { uBar.style.width = pct + '%'; setBwBarClass(uBar, pct); }
 
-      // Mode badges
+      // ── Mode badges ─────────────────────────────────────────
       const updateBadge = (id, active) => {
         const el = document.getElementById(id);
         if (!el) return;
-        el.className = 'badge ' + (active ? 'badge-ok' : 'badge-error');
-        el.textContent = active ? (id === 'u-mode-badge' ? 'Active' : 'Enabled') : (id === 'u-mode-badge' ? 'Inactive' : 'Disabled');
+        el.className  = 'badge ' + (active ? 'badge-ok' : 'badge-error');
+        el.textContent = active
+          ? (id === 'u-mode-badge' ? 'Active' : 'Enabled')
+          : (id === 'u-mode-badge' ? 'Inactive' : 'Disabled');
       };
-      updateBadge('bw-mode-badge',  d.bandwidth_mode);
-      updateBadge('bw-mode-badge2', d.bandwidth_mode);
-      updateBadge('u-mode-badge',   d.user_bw_mode);
+      updateBadge('bw-mode-badge', d.bandwidth_mode);
+      updateBadge('u-mode-badge',  d.user_bw_mode);
 
-      // Update countdown
+      // ── Countdown timer ─────────────────────────────────────
       if (d.seconds_to_reset != null) {
         _resetEnd = Math.floor(Date.now() / 1000) + d.seconds_to_reset;
         const fmt = formatCountdown(d.seconds_to_reset);

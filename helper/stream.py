@@ -846,10 +846,14 @@ class StreamingService:
 
                 async def _do_track(mid=message_id, bs=bytes_sent, uid=user_id):
                     try:
+                        from helper.bandwidth import is_exempt_from_user_bw
                         await self.db.track_bandwidth(mid, bs)
                         await self.db.record_global_bw(bs)
+                        # Only record per-user BW for non-exempt (normal) users
                         if uid:
-                            await self.db.record_user_bw(uid, bs)
+                            exempt = await is_exempt_from_user_bw(self.db, uid)
+                            if not exempt:
+                                await self.db.record_user_bw(uid, bs)
                     except Exception as exc:
                         logger.error("track_bandwidth_full error: %s", exc)
 

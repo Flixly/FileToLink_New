@@ -227,6 +227,57 @@ class Database:
             logger.error("reset bandwidth error: %s", e)
             return False
 
+    # ══════════════════════════════════════════════════════════════
+    # BANDWIDTH WARNING FLAG HELPERS
+    # ══════════════════════════════════════════════════════════════
+
+    async def mark_user_bw_warned(self, user_id: str, flag: str = "warned_limit") -> bool:
+        """
+        Persist a one-time warning flag for user bandwidth.
+        flag: 'warned_limit' (over-limit) or 'warned_pct' (threshold warning)
+        """
+        try:
+            await self.user_bw.update_one(
+                {"user_id": user_id},
+                {"$set": {flag: True}},
+                upsert=True,
+            )
+            return True
+        except Exception as e:
+            logger.error("mark_user_bw_warned error: %s", e)
+            return False
+
+    async def get_user_bw_warned(self, user_id: str, flag: str = "warned_limit") -> bool:
+        """Return True if the warning flag for this cycle is already set."""
+        try:
+            doc = await self.user_bw.find_one({"user_id": user_id}, {flag: 1})
+            return bool(doc and doc.get(flag, False))
+        except Exception as e:
+            logger.error("get_user_bw_warned error: %s", e)
+            return False
+
+    async def mark_global_bw_warned(self) -> bool:
+        """Set the global pct-threshold warning flag on the active cycle."""
+        try:
+            cycle = await self._ensure_global_cycle()
+            await self.global_bw.update_one(
+                {"_id": cycle["_id"]},
+                {"$set": {"warned_owner": True}},
+            )
+            return True
+        except Exception as e:
+            logger.error("mark_global_bw_warned error: %s", e)
+            return False
+
+    async def get_global_bw_warned(self) -> bool:
+        """Return True if the global pct-threshold warning has already been sent this cycle."""
+        try:
+            cycle = await self._ensure_global_cycle()
+            return bool(cycle.get("warned_owner", False))
+        except Exception as e:
+            logger.error("get_global_bw_warned error: %s", e)
+            return False
+
     async def get_total_bandwidth(self) -> int:
         try:
             pipeline = [{"$group": {"_id": None, "total": {"$sum": "$total_bytes"}}}]
@@ -343,10 +394,17 @@ class Database:
     # PER-USER MONTHLY BANDWIDTH
     # ══════════════════════════════════════════════════════════════
 
-    async def _ensure_user_bw_cycle(self, user_id: str) -> Dict:
+    async def _ensure_user_bw_cycle(self, user_id: str, lazy: bool = False) -> Dict:
         """
         Ensure the user has an active monthly bandwidth record.
         Each user's 30-day window starts the first time they consume bandwidth.
+
+        Args:
+            user_id: The user ID string.
+            lazy:    If True, do NOT create a new document; return an empty
+                     sentinel dict when the user has never consumed bandwidth.
+                     Used so that read-only callers (check, display) don't
+                     accidentally initialise the cycle before first real usage.
         """
         now  = datetime.utcnow()
         doc  = await self.user_bw.find_one({"user_id": user_id})
@@ -355,40 +413,71 @@ class Database:
             cycle_start = doc["cycle_start"]
             if (now - cycle_start).days < 30:
                 return doc
-            # Cycle expired — reset in-place (preserve history via cycle_start update)
+            # Cycle expired — reset in-place and clear warning flag
             await self.user_bw.update_one(
                 {"user_id": user_id},
                 {
                     "$set": {
-                        "cycle_start": now,
-                        "cycle_end":   now + timedelta(days=30),
-                        "used_bytes":  0,
-                        "last_reset":  now,
+                        "cycle_start":   now,
+                        "cycle_end":     now + timedelta(days=30),
+                        "used_bytes":    0,
+                        "last_reset":    now,
+                        "warned_limit":  False,   # reset warning flag each cycle
+                        "warned_pct":    False,
                     }
                 },
             )
             return await self.user_bw.find_one({"user_id": user_id})
 
-        # First-ever record for this user
+        # No record yet
+        if lazy:
+            # Caller just wants to read stats — don't initialise cycle yet
+            return {}
+
+        # First-ever record for this user (triggered by first actual usage)
         new_doc = {
-            "user_id":     user_id,
-            "cycle_start": now,
-            "cycle_end":   now + timedelta(days=30),
-            "used_bytes":  0,
-            "last_reset":  now,
-            "created_at":  now,
+            "user_id":      user_id,
+            "cycle_start":  now,
+            "cycle_end":    now + timedelta(days=30),
+            "used_bytes":   0,
+            "last_reset":   now,
+            "created_at":   now,
+            "first_used":   now,          # timestamp of first real usage
+            "warned_limit": False,        # True once limit-exceeded warning sent
+            "warned_pct":   False,        # True once pct-threshold warning sent
         }
         await self.user_bw.insert_one(new_doc)
         return await self.user_bw.find_one({"user_id": user_id})
 
-    async def get_user_bw(self, user_id: str) -> Dict:
-        """Return per-user cycle stats."""
+    async def get_user_bw(self, user_id: str, lazy: bool = True) -> Dict:
+        """
+        Return per-user cycle stats.
+
+        Args:
+            lazy: When True (default for display/check callers) the cycle is
+                  NOT initialised if the user has never used any bandwidth.
+                  Pass lazy=False only when recording actual usage.
+        """
         try:
             from config import Config
-            doc       = await self._ensure_user_bw_cycle(user_id)
+            doc       = await self._ensure_user_bw_cycle(user_id, lazy=lazy)
             max_ubw   = Config.get("max_user_bandwidth", 10737418240)  # default 10 GB
             now       = datetime.utcnow()
             used      = doc.get("used_bytes", 0)
+
+            # If no record yet (lazy sentinel), return zeroed stats
+            if not doc:
+                return {
+                    "used":           0,
+                    "limit":          max_ubw,
+                    "days_remaining": 30,
+                    "cycle_start":    None,
+                    "cycle_end":      None,
+                    "pct":            0,
+                    "remaining":      max_ubw,
+                    "no_usage_yet":   True,
+                }
+
             end       = doc["cycle_end"]
             days_r    = max(0, (end - now).days)
             pct       = round((used / max_ubw * 100) if max_ubw else 0, 1)
@@ -400,19 +489,29 @@ class Database:
                 "cycle_end":      end,
                 "pct":            pct,
                 "remaining":      max(0, max_ubw - used),
+                "no_usage_yet":   False,
             }
         except Exception as e:
             logger.error("get_user_bw error: %s", e)
             return {"used": 0, "limit": 0, "days_remaining": 30, "pct": 0, "remaining": 0}
 
     async def record_user_bw(self, user_id: str, size: int) -> bool:
-        """Atomically add `size` bytes to the user's monthly cycle."""
+        """
+        Atomically add `size` bytes to the user's monthly cycle.
+        Lazily initialises the cycle on first real usage (sets first_used timestamp).
+        """
         try:
-            doc = await self._ensure_user_bw_cycle(user_id)
-            await self.user_bw.update_one(
-                {"user_id": user_id},
-                {"$inc": {"used_bytes": size}, "$set": {"last_updated": datetime.utcnow()}},
-            )
+            # lazy=False: create the doc on first real usage
+            doc = await self._ensure_user_bw_cycle(user_id, lazy=False)
+            now = datetime.utcnow()
+            update: dict = {
+                "$inc": {"used_bytes": size},
+                "$set": {"last_updated": now},
+            }
+            # Stamp first_used if this is the very first byte tracked
+            if not doc.get("first_used"):
+                update["$set"]["first_used"] = now
+            await self.user_bw.update_one({"user_id": user_id}, update)
             return True
         except Exception as e:
             logger.error("record_user_bw error: %s", e)
@@ -422,11 +521,15 @@ class Database:
         """
         Check whether user has exceeded their per-user bandwidth.
         Returns (allowed: bool, stats: dict).
+        Uses lazy=True so display/gate checks don't create records prematurely.
         """
         try:
-            stats     = await self.get_user_bw(user_id)
+            stats     = await self.get_user_bw(user_id, lazy=True)
             max_ubw   = stats["limit"]
             if max_ubw <= 0:
+                return True, stats
+            # Users who have never used any bandwidth are always allowed
+            if stats.get("no_usage_yet"):
                 return True, stats
             allowed   = stats["used"] < max_ubw
             return allowed, stats
@@ -435,17 +538,19 @@ class Database:
             return True, {}
 
     async def reset_user_bw(self, user_id: str) -> bool:
-        """Manually reset a single user's bandwidth cycle."""
+        """Manually reset a single user's bandwidth cycle and warning flags."""
         try:
             now = datetime.utcnow()
             await self.user_bw.update_one(
                 {"user_id": user_id},
                 {
                     "$set": {
-                        "cycle_start": now,
-                        "cycle_end":   now + timedelta(days=30),
-                        "used_bytes":  0,
-                        "last_reset":  now,
+                        "cycle_start":   now,
+                        "cycle_end":     now + timedelta(days=30),
+                        "used_bytes":    0,
+                        "last_reset":    now,
+                        "warned_limit":  False,
+                        "warned_pct":    False,
                     }
                 },
                 upsert=True,
